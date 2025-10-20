@@ -3576,6 +3576,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pix_wallet"
+version = "0.1.0"
+dependencies = [
+ "bs58",
+ "serde",
+ "serde_json",
+ "solana-client",
+ "solana-sdk",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+]
+
+[[package]]
 name = "pkcs8"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6265,20 +6279,6 @@ dependencies = [
  "solana-rent",
  "solana-sdk-ids",
  "solana-serialize-utils",
-]
-
-[[package]]
-name = "solana_wallet"
-version = "0.1.0"
-dependencies = [
- "bs58",
- "serde",
- "serde_json",
- "solana-client",
- "solana-sdk",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
 ]
 
 [[package]]
