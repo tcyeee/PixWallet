@@ -3,7 +3,10 @@
     <div class="text-gray-500 font-bold text-8xl pb-5">Hi</div>
     <div class="flex gap-2">
       <button type="submit" class="btn btn-primary" @click="createWallet()">Create wallet</button>
-      <button type="submit" class="btn btn-primary" @click="refreshBalance()">Refresh Balance</button>
+      <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
+        <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
+        Refresh Balance
+      </button>
     </div>
   </div>
   <table class="table m-w-[300px]">
@@ -24,7 +27,7 @@
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
         <td>{{ item.network }}</td>
-        <td>{{ item.balance }}</td>
+        <td>{{ formatSol(item.balance) }}</td>
       </tr>
     </tbody>
   </table>
@@ -71,6 +74,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
+import { listen } from "@tauri-apps/api/event";
 
 // 请求页面初始数据
 onMounted(async () => {
@@ -94,9 +98,17 @@ async function dataInit() {
   }
 }
 
-async function refreshBalance() {
-  walletList.value = await invoke<Array<WalletInfo>>("refresh_balance");
+const loadingRefreshBalance = ref(false);
+function refreshBalance() {
+  loadingRefreshBalance.value = true;
+  invoke<null>("refresh_balance");
 }
+
+listen<Array<WalletInfo>>("refresh_balance", (event) => {
+  loadingRefreshBalance.value = false;
+  walletList.value = event.payload;
+  console.log(event.payload);
+});
 
 async function createWallet() {
   try {
@@ -159,5 +171,10 @@ function showError(message: string) {
     errorMsg.value = "";
     errorTimer = undefined;
   }, 3000);
+}
+
+function formatSol(lamport: number | undefined): string {
+  if (!lamport) return "0 SOL";
+  return (lamport / 1_000_000_000).toFixed(2) + " SOL";
 }
 </script>

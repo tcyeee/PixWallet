@@ -71,6 +71,7 @@ impl WalletInfo {
                 let wallet_clone = wallet.clone();
                 std::thread::spawn(move || {
                     let client = Self::get_rpc_client(wallet_clone.network);
+                    // TODO 添加对网络情况的判断
                     match client.get_balance(&wallet_clone.public_key.parse().unwrap()) {
                         Ok(balance) => (wallet_clone.public_key.clone(), Some(balance)),
                         Err(_) => (wallet_clone.public_key.clone(), None),
@@ -191,6 +192,23 @@ impl WalletInfo {
 
     pub fn delete_wallet(self) -> Result<Vec<Self>, String> {
         let mut wallets = Self::load_from_file()?;
+
+        // 如果账户还有余额,则不允许删除
+        let client = Self::get_rpc_client(self.network);
+        // 解析公钥，避免使用 unwrap
+        let pubkey = self
+            .public_key
+            .parse()
+            .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))?;
+
+        // 查询余额并将 RPC 错误映射为 String
+        let balance = client
+            .get_balance(&pubkey)
+            .map_err(|e| format!("查询余额失败: {}", e))?;
+
+        if balance != 0 {
+            return Err("余额不为0,禁止删除".to_string());
+        }
 
         // 保留不匹配的钱包（即删除匹配的钱包）
         wallets.retain(|wallet| wallet.public_key != self.public_key);
