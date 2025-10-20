@@ -1,5 +1,6 @@
 use crate::models::network::SolanaNetwork;
 use crate::models::wallet::WalletInfo;
+use tauri::{AppHandle, Emitter};
 
 // 创建新的钱包
 #[tauri::command]
@@ -25,7 +26,12 @@ pub fn delete_wallet(public_key: &str) -> Result<Vec<WalletInfo>, String> {
     wallet.delete_wallet()
 }
 
+// 异步刷新余额
 #[tauri::command]
-pub fn refresh_balance() -> Result<Vec<WalletInfo>, String> {
-    WalletInfo::refresh_balance()
+pub fn refresh_balance(app: AppHandle) {
+    std::thread::spawn(move || {
+        // TODO 添加全局错误弹窗
+        let wallets = WalletInfo::refresh_balance().unwrap();
+        app.emit("refresh_balance", wallets).unwrap();
+    });
 }

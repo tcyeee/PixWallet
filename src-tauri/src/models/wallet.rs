@@ -71,6 +71,7 @@ impl WalletInfo {
                 let wallet_clone = wallet.clone();
                 std::thread::spawn(move || {
                     let client = Self::get_rpc_client(wallet_clone.network);
+                    // TODO 添加对网络情况的判断
                     match client.get_balance(&wallet_clone.public_key.parse().unwrap()) {
                         Ok(balance) => (wallet_clone.public_key.clone(), Some(balance)),
                         Err(_) => (wallet_clone.public_key.clone(), None),
