@@ -23,10 +23,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { ref } from "vue";
 import { useNav } from "@/hooks/useNav";
-import { WalletInfo } from "@/models";
+import API from "@/api";
 
 const { goHome, pageQuery } = useNav();
 const walletInfo = pageQuery();
@@ -37,11 +36,10 @@ function changeAlias() {
     publicKey: walletInfo?.public_key,
     newAlias: alias.value,
   };
-  invoke<Array<WalletInfo>>("change_alias", params);
+  API.WalletAliasUpdate(params);
 }
 
 function deleteAccount() {
-  const params = { publicKey: walletInfo?.public_key };
-  invoke<Array<WalletInfo>>("delete_wallet", params);
+  API.WalletDel({ publicKey: walletInfo?.public_key });
 }
 </script>

@@ -35,8 +35,8 @@ import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { WalletInfo } from "@/models";
 import { useNav } from "@/hooks/useNav";
-import { WalletCreate, WalletBalanceRefresh, WalletList } from "@/api";
 import { formatSol } from "@/utils/common";
+import API from "@/api";
 
 const { goTo } = useNav();
 
@@ -46,13 +46,13 @@ onMounted(async () => {
 
 var walletList = ref<WalletInfo[]>([]);
 async function dataInit() {
-  walletList.value = (await WalletList()) || [];
+  walletList.value = (await API.WalletList()) || [];
 }
 
 const loadingRefreshBalance = ref(false);
 function refreshBalance() {
   loadingRefreshBalance.value = true;
-  WalletBalanceRefresh();
+  API.WalletBalanceRefresh();
 }
 
 listen<Array<WalletInfo>>("refresh_balance", (event) => {
@@ -61,7 +61,7 @@ listen<Array<WalletInfo>>("refresh_balance", (event) => {
 });
 
 async function createWallet() {
-  await WalletCreate();
+  await API.WalletCreate();
 }
 
 function selectOne(wallet: WalletInfo) {
