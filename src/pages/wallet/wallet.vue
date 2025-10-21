@@ -1,13 +1,10 @@
 <template>
-  <div class="pb-5">
-    <div class="text-gray-500 font-bold text-8xl pb-5">Hi</div>
-    <div class="flex gap-2">
-      <button type="submit" class="btn btn-primary" @click="createWallet()">Create wallet</button>
-      <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
-        <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
-        Refresh Balance
-      </button>
-    </div>
+  <div v-bind="$attrs" class="flex gap-2">
+    <button type="submit" class="btn btn-primary" @click="createWallet()">Create wallet</button>
+    <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
+      <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
+      Refresh Balance
+    </button>
   </div>
   <table class="table m-w-[300px]">
     <!-- head -->
@@ -97,7 +94,6 @@ function refreshBalance() {
 listen<Array<WalletInfo>>("refresh_balance", (event) => {
   loadingRefreshBalance.value = false;
   walletList.value = event.payload;
-  console.log(event.payload);
 });
 
 async function createWallet() {
