@@ -3,7 +3,7 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 import { notify } from './utils/notify'
 import { alert } from './utils/alert'
-import router from './router'
+import router from './router/init'
 import './assets/global.css';
 import { setupTauriListener } from './plugins/tauriListener'
 

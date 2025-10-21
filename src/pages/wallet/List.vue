@@ -1,13 +1,13 @@
 <template>
   <div v-bind="$attrs" class="flex gap-2">
-    <button type="submit" class="btn btn-primary" @click="createWallet()">Create wallet</button>
+    <button type="submit" class="btn btn-primary" @click="API.WalletCreate()">Create wallet</button>
     <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
       <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
       Refresh Balance
     </button>
+    <button type="submit" class="btn btn-primary" @click="NAV.GoTo('transfer')">Transfer</button>
   </div>
   <table class="table m-w-[300px]">
-    <!-- head -->
     <thead>
       <tr>
         <th></th>
@@ -18,8 +18,7 @@
       </tr>
     </thead>
     <tbody>
-      <!-- row 1 -->
-      <tr v-for="(item,index) in walletList" :key="item.public_key" @click="selectOne(item)">
+      <tr v-for="(item,index) in walletList" :key="item.public_key" @click="NAV.GoTo('wallet', item)">
         <th>{{ index+1 }}</th>
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
@@ -34,20 +33,14 @@
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { WalletInfo } from "@/models";
-import { useNav } from "@/hooks/useNav";
 import { formatSol } from "@/utils/common";
 import API from "@/api";
-
-const { goTo } = useNav();
-
-onMounted(async () => {
-  await dataInit();
-});
+import NAV from "@/router";
 
 var walletList = ref<WalletInfo[]>([]);
-async function dataInit() {
+onMounted(async () => {
   walletList.value = (await API.WalletList()) || [];
-}
+});
 
 const loadingRefreshBalance = ref(false);
 function refreshBalance() {
@@ -59,12 +52,4 @@ listen<Array<WalletInfo>>("refresh_balance", (event) => {
   loadingRefreshBalance.value = false;
   walletList.value = event.payload;
 });
-
-async function createWallet() {
-  await API.WalletCreate();
-}
-
-function selectOne(wallet: WalletInfo) {
-  goTo("wallet", wallet);
-}
 </script>

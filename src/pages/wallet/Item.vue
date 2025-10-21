@@ -1,5 +1,5 @@
 <template>
-  <button class="btn" @click="goHome()">Return</button>
+  <button class="btn" @click="NAV.Home()">Return</button>
 
   <div class="space-y-2 mb-4">
     <div class="flex items-center">
@@ -24,11 +24,12 @@
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import { useNav } from "@/hooks/useNav";
 import API from "@/api";
+import { useRoute } from "vue-router";
+import NAV from "@/router";
 
-const { goHome, pageQuery } = useNav();
-const walletInfo = pageQuery();
+const route = useRoute();
+const walletInfo = route.query;
 
 const alias = ref("");
 function changeAlias() {
