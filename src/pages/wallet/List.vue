@@ -19,7 +19,7 @@
     </thead>
     <tbody>
       <!-- row 1 -->
-      <tr v-for="(item,index) in walletList" :key="item.public_key" @click="select(item)">
+      <tr v-for="(item,index) in walletList" :key="item.public_key" @click="selectOne(item)">
         <th>{{ index+1 }}</th>
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
@@ -28,52 +28,20 @@
       </tr>
     </tbody>
   </table>
-
-  <!-- 对话框 -->
-  <dialog id="wallet_modal" class="modal">
-    <div v-if="selectWallet" class="modal-box">
-
-      <div class="space-y-2 mb-4">
-        <div class="flex items-center">
-          <span class="w-24 font-medium">Alias:</span>
-          <div class="flex gap-2 w-full">
-            <input type="text" class="input" placeholder="Type here" v-model="alias" />
-            <button class="btn" @click="changeAlias()">修改</button>
-          </div>
-        </div>
-        <div class="flex items-center">
-          <span class="w-24 font-medium">Network:</span>
-          <span class="truncate">{{ selectWallet.network }}</span>
-        </div>
-        <div class="flex items-center">
-          <span class="w-24 font-medium">Public Key:</span>
-          <span class="truncate break-all max-w-full text-sm bg-base-200 px-2 py-1 rounded">{{ selectWallet.public_key }}</span>
-        </div>
-      </div>
-      <div class="flex justify-end gap-2">
-        <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
-        <button class="btn" @click="dialogToggle(false)">Close</button>
-      </div>
-    </div>
-  </dialog>
 </template>
 
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
+import { WalletInfo } from "@/models";
+import { useNav } from "@/hooks/useNav";
 
-// 请求页面初始数据
+const { goTo } = useNav();
+
 onMounted(async () => {
   await dataInit();
 });
-
-type WalletInfo = {
-  public_key: string;
-  alias: string;
-  network: string;
-  balance: number;
-};
 
 var walletList = ref<WalletInfo[]>([]);
 async function dataInit() {
@@ -105,27 +73,8 @@ async function createWallet() {
   }
 }
 
-var selectWallet = ref<WalletInfo>();
-var alias = ref<String>();
-function select(wallet: WalletInfo) {
-  selectWallet.value = wallet;
-  alias.value = wallet.alias || "";
-  dialogToggle(true);
-}
-
-async function changeAlias() {
-  const params = {
-    publicKey: selectWallet.value?.public_key,
-    newAlias: alias.value,
-  };
-  walletList.value = await invoke<Array<WalletInfo>>("change_alias", params);
-  dialogToggle(false);
-}
-
-async function deleteAccount() {
-  const params = { publicKey: selectWallet.value?.public_key };
-  walletList.value = await invoke<Array<WalletInfo>>("delete_wallet", params);
-  dialogToggle(false);
+function selectOne(wallet: WalletInfo) {
+  goTo("wallet", wallet);
 }
 
 function dialogToggle(show: boolean) {
