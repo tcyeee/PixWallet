@@ -1,7 +1,10 @@
 import { createApp } from "vue";
+import { createPinia } from "pinia";
 import App from "./App.vue";
 
-// 导入全局样式
 import './assets/global.css';
 
-createApp(App).mount("#app");
+const app = createApp(App);
+const pinia = createPinia();
+app.use(pinia);
+app.mount("#app");

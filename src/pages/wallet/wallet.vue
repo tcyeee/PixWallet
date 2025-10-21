@@ -75,6 +75,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
+import { notify } from "@/utils/notify";
 
 // 请求页面初始数据
 onMounted(async () => {
@@ -111,12 +112,13 @@ listen<Array<WalletInfo>>("refresh_balance", (event) => {
 });
 
 async function createWallet() {
-  try {
-    const res = await invoke<Array<WalletInfo>>("create_wallet");
-    walletList.value = res;
-  } catch (e) {
-    showError(e as string);
-  }
+  notify.success("保存成功！");
+  // try {
+  //   const res = await invoke<Array<WalletInfo>>("create_wallet");
+  //   walletList.value = res;
+  // } catch (e) {
+  //   showError(e as string);
+  // }
 }
 
 var selectWallet = ref<WalletInfo>();
