@@ -31,11 +31,12 @@
 </template>
 
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { WalletInfo } from "@/models";
 import { useNav } from "@/hooks/useNav";
+import { WalletCreate, WalletBalanceRefresh, WalletList } from "@/api";
+import { formatSol } from "@/utils/common";
 
 const { goTo } = useNav();
 
@@ -45,18 +46,13 @@ onMounted(async () => {
 
 var walletList = ref<WalletInfo[]>([]);
 async function dataInit() {
-  try {
-    const res = await invoke<WalletInfo[]>("query_wallet");
-    walletList.value = res || [];
-  } catch (err) {
-    Alert.error(`加载钱包数据失败: ${err}`);
-  }
+  walletList.value = (await WalletList()) || [];
 }
 
 const loadingRefreshBalance = ref(false);
 function refreshBalance() {
   loadingRefreshBalance.value = true;
-  invoke<null>("refresh_balance");
+  WalletBalanceRefresh();
 }
 
 listen<Array<WalletInfo>>("refresh_balance", (event) => {
@@ -65,20 +61,10 @@ listen<Array<WalletInfo>>("refresh_balance", (event) => {
 });
 
 async function createWallet() {
-  try {
-    const res = await invoke<Array<WalletInfo>>("create_wallet");
-    walletList.value = res;
-  } catch (e) {
-    Alert.error(e as string);
-  }
+  await WalletCreate();
 }
 
 function selectOne(wallet: WalletInfo) {
   goTo("wallet", wallet);
-}
-
-function formatSol(lamport: number | undefined): string {
-  if (!lamport) return "0 SOL";
-  return (lamport / 1_000_000_000).toFixed(2) + " SOL";
 }
 </script>
