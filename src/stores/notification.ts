@@ -7,10 +7,17 @@ export const useNotificationStore = defineStore('notification', {
             type: 'success' | 'error' | 'warning' | 'info'
             text: string
         }[],
+        maxMessages: 8
     }),
     actions: {
         push(type: 'success' | 'error' | 'warning' | 'info', text: string) {
             const id = Date.now()
+
+            // 如果当前条数达到 maxAlerts，删除最早的一条
+            if (this.messages.length >= this.maxMessages) {
+                this.messages.shift()
+            }
+
             this.messages.push({ id, type, text })
 
             // 自动 3 秒后消失

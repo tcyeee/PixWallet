@@ -1,6 +1,6 @@
 import { useNotificationStore } from '@/stores/notification'
 
-export const notify = {
+const notify = {
     success(msg: string) {
         useNotificationStore().push('success', msg)
     },
@@ -14,3 +14,5 @@ export const notify = {
         useNotificationStore().push('info', msg)
     },
 }
+
+export default notify
