@@ -20,12 +20,11 @@
   </div>
   <div class="flex justify-end gap-2">
     <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
-    <button class="btn" @click="dialogToggle(false)">Close</button>
   </div>
 </template>
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useNav } from "@/hooks/useNav";
 import { WalletInfo } from "@/models";
 

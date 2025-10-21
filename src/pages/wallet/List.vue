@@ -77,16 +77,6 @@ function selectOne(wallet: WalletInfo) {
   goTo("wallet", wallet);
 }
 
-function dialogToggle(show: boolean) {
-  const modal = document.getElementById("wallet_modal") as HTMLDialogElement;
-  if (!modal) return;
-  if (show) {
-    modal.showModal();
-  } else {
-    modal.close();
-  }
-}
-
 function formatSol(lamport: number | undefined): string {
   if (!lamport) return "0 SOL";
   return (lamport / 1_000_000_000).toFixed(2) + " SOL";
