@@ -1,6 +1,6 @@
 import { useAlertStore } from '@/stores/alert'
 
-const alert = {
+export const alert = {
     success(msg: string) {
         useAlertStore().show('success', msg, false)
     },
@@ -17,5 +17,3 @@ const alert = {
         useAlertStore().clearAll()
     },
 }
-
-export default alert

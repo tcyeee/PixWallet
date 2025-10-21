@@ -59,16 +59,6 @@
       </div>
     </div>
   </dialog>
-
-  <!-- 错误提示 -->
-  <div v-if="errorMsg" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-auto max-w-[90%] min-w-[300px]">
-    <div class="alert alert-error shadow-lg">
-      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span>{{ errorMsg }}</span>
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -94,7 +84,7 @@ async function dataInit() {
     const res = await invoke<WalletInfo[]>("query_wallet");
     walletList.value = res || [];
   } catch (err) {
-    showError(`加载钱包数据失败: ${err}`);
+    Alert.error(`加载钱包数据失败: ${err}`);
   }
 }
 
@@ -111,14 +101,12 @@ listen<Array<WalletInfo>>("refresh_balance", (event) => {
 });
 
 async function createWallet() {
-  Notify.success("操作成功");
-  Alert.error("服务器错误");
-  // try {
-  //   const res = await invoke<Array<WalletInfo>>("create_wallet");
-  //   walletList.value = res;
-  // } catch (e) {
-  //   showError(e as string);
-  // }
+  try {
+    const res = await invoke<Array<WalletInfo>>("create_wallet");
+    walletList.value = res;
+  } catch (e) {
+    Alert.error(e as string);
+  }
 }
 
 var selectWallet = ref<WalletInfo>();
@@ -152,27 +140,6 @@ function dialogToggle(show: boolean) {
   } else {
     modal.close();
   }
-}
-
-const errorMsg = ref<string>(""); // 错误消息
-let errorTimer: number | undefined; // 存储当前的计时器 ID
-
-// 显示错误消息，并在3秒后自动隐藏
-function showError(message: string) {
-  // 如果存在之前的计时器，清除它
-  if (errorTimer) {
-    clearTimeout(errorTimer);
-    errorTimer = undefined;
-  }
-
-  // 设置错误消息
-  errorMsg.value = message;
-
-  // 创建新的计时器
-  errorTimer = setTimeout(() => {
-    errorMsg.value = "";
-    errorTimer = undefined;
-  }, 3000);
 }
 
 function formatSol(lamport: number | undefined): string {
