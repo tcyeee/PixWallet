@@ -18,3 +18,18 @@ impl SolanaNetwork {
         }
     }
 }
+
+impl std::fmt::Display for SolanaNetwork {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SolanaNetwork::Mainnet => "mainnet",
+                SolanaNetwork::Devnet => "devnet",
+                SolanaNetwork::Testnet => "testnet",
+                SolanaNetwork::Local => "local",
+            }
+        )
+    }
+}
