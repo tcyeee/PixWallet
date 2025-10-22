@@ -4,3 +4,8 @@ export type WalletInfo = {
     network: string;
     balance: number;
 }
+
+export enum MsgType {
+    WALLETS,
+    BALANCE,
+}

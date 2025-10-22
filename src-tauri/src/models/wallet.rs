@@ -45,7 +45,7 @@ impl WalletInfo {
         .map_err(|_| "未找到对应钱包".to_string())
     }
 
-    pub fn del(&self, conn: &Connection) -> Result<bool, String> {
+    pub fn del(&self, conn: &Connection) -> Result<(), String> {
         if self.query_balance()? != 0 {
             return Err("余额不为0,禁止删除".to_string());
         }
@@ -55,30 +55,15 @@ impl WalletInfo {
             params![&self.public_key],
         )
         .map(|_| ())
-        .map_err(|_| "删除失败".to_string());
-
-        Ok(true)
+        .map_err(|_| "删除失败".to_string())
     }
 
-    // 更新自身的余额, 并返回自身
-    pub fn update_balance(&mut self, conn: &Connection) -> Result<&mut Self, String> {
-        let new_balance: u64 = self.query_balance()?;
-
-        if self.balance != Some(new_balance) {
-            self.balance = Some(new_balance);
-            self.update(&conn);
-        }
-
-        Ok(self)
-    }
-
-    pub fn update(&self, conn: &Connection) -> Result<&Self, String> {
+    pub fn update(&self, conn: &Connection) -> Result<usize, String> {
         conn.execute(
             "update wallet set alias = ?1, balance = ?2 where public_key = ?3",
             params![self.alias, self.balance, self.public_key],
         )
-        .map_err(|_| "更新出错".to_string());
-        Ok(self)
+        .map_err(|_| "更新出错".to_string())
     }
 
     pub fn query_balance(&self) -> Result<u64, String> {

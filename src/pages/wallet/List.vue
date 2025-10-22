@@ -1,6 +1,8 @@
 <template>
   <div v-bind="$attrs" class="flex gap-2">
-    <button type="submit" class="btn btn-primary" @click="API.WalletCreate()">Create wallet</button>
+    <button type="submit" class="btn btn-primary" @click="createWallet()">
+      <span v-if="loadingCreateWallet" class="loading loading-spinner"></span>
+      Create wallet</button>
     <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
       <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
       Refresh Balance
@@ -32,7 +34,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
-import { WalletInfo } from "@/models";
+import { MsgType, WalletInfo } from "@/models";
 import { formatSol } from "@/utils/common";
 import API from "@/api";
 import NAV from "@/router";
@@ -48,7 +50,18 @@ function refreshBalance() {
   API.WalletBalanceRefresh();
 }
 
-listen<Array<WalletInfo>>("refresh_balance", (event) => {
+// 创建钱包
+const loadingCreateWallet = ref(false);
+function createWallet() {
+  loadingCreateWallet.value = true;
+  API.WalletCreate()
+    .then((list) => {
+      walletList.value = list || [];
+    })
+    .finally(() => (loadingCreateWallet.value = false));
+}
+
+listen<Array<WalletInfo>>(MsgType.BALANCE.toString(), (event) => {
   loadingRefreshBalance.value = false;
   walletList.value = event.payload;
 });

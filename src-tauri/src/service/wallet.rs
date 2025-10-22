@@ -2,10 +2,7 @@ use crate::models::network::SolanaNetwork;
 use crate::models::wallet::WalletInfo;
 use rusqlite::Connection;
 use std::sync::Mutex;
-use tauri::{
-    http::header::{X_CONTENT_TYPE_OPTIONS, X_FRAME_OPTIONS},
-    AppHandle, State,
-};
+use tauri::{AppHandle, Emitter, State};
 
 // 查询钱包信息
 #[tauri::command]
@@ -22,6 +19,7 @@ pub fn create_wallet(
     let conn = conn_state.lock().unwrap();
     let wallet = WalletInfo::new(&conn, network)?;
     wallet.insert(&conn).map_err(|e| e.to_string())?;
+
     WalletInfo::query_all(&conn)
 }
 
@@ -34,7 +32,10 @@ pub fn change_alias(
     let conn = conn_state.lock().unwrap();
     let mut wallet = WalletInfo::query_by_public_key(&conn, public_key)?;
     wallet.alias = Some(new_alias.to_string());
-    wallet.update(&conn);
+    match wallet.update(&conn) {
+        Ok(_) => {}
+        Err(e) => return Err(e),
+    };
     WalletInfo::query_all(&conn)
 }
 
@@ -44,7 +45,11 @@ pub fn delete_wallet(
     public_key: &str,
 ) -> Result<Vec<WalletInfo>, String> {
     let conn = conn_state.lock().unwrap();
-    WalletInfo::query_by_public_key(&conn, public_key)?.del(&conn);
+    match WalletInfo::query_by_public_key(&conn, public_key)?.del(&conn) {
+        Ok(_) => {}
+        Err(e) => return Err(e),
+    }
+
     WalletInfo::query_all(&conn)
 }
 
