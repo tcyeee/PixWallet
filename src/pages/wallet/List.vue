@@ -48,7 +48,6 @@ const loadingRefreshBalance = ref(false);
 function refreshBalance() {
   loadingRefreshBalance.value = true;
   API.WalletBalanceRefresh();
-  // API.AsyncTest();
 }
 
 // 创建钱包
@@ -57,7 +56,7 @@ function createWallet() {
   loadingCreateWallet.value = true;
   API.WalletCreate()
     .then((list) => {
-      walletList.value = list || [];
+      if (list) walletList.value = list;
     })
     .finally(() => (loadingCreateWallet.value = false));
 }
