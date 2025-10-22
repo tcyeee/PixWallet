@@ -1,12 +1,16 @@
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
+
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::signature::{Keypair, Signer};
-use std::path::PathBuf;
 
 use crate::models::network::SolanaNetwork;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WalletInfo {
     pub public_key: String,
     pub private_key: String,
@@ -14,8 +18,6 @@ pub struct WalletInfo {
     pub balance: Option<u64>,
     pub alias: Option<String>,
 }
-
-const WALLET_FILE_PATH: &str = ".solana-wallet/wallet.json";
 
 impl WalletInfo {
     pub fn insert(&self, conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -26,9 +28,77 @@ impl WalletInfo {
         Ok(())
     }
 
-    pub fn new(network: Option<SolanaNetwork>) -> Result<Self, String> {
+    pub fn query_by_public_key(conn: &Connection, public_key: &str) -> Result<Self, String> {
+        conn.query_row(
+            "select public_key, private_key, network, balance, alias from wallet where public_key = ?1 limit 1",
+            params![public_key], |row|{
+                let network_str: String = row.get(2)?;
+                Ok(WalletInfo{
+                    public_key: row.get(0)?,
+                    private_key: row.get(1)?,
+                    network: SolanaNetwork::from_str(&network_str) ,
+                    balance: row.get(3)?,
+                    alias: row.get(4)?,
+                })
+            }
+        )
+        .map_err(|_| "未找到对应钱包".to_string())
+    }
+
+    pub fn del(&self, conn: &Connection) -> Result<bool, String> {
+        if self.query_balance()? != 0 {
+            return Err("余额不为0,禁止删除".to_string());
+        }
+
+        conn.execute(
+            "DELETE FROM wallet WHERE public_key = ?1",
+            params![&self.public_key],
+        )
+        .map(|_| ())
+        .map_err(|_| "删除失败".to_string());
+
+        Ok(true)
+    }
+
+    // 更新自身的余额, 并返回自身
+    pub fn update_balance(&mut self, conn: &Connection) -> Result<&mut Self, String> {
+        let new_balance: u64 = self.query_balance()?;
+
+        if self.balance != Some(new_balance) {
+            self.balance = Some(new_balance);
+            self.update(&conn);
+        }
+
+        Ok(self)
+    }
+
+    pub fn update(&self, conn: &Connection) -> Result<&Self, String> {
+        conn.execute(
+            "update wallet set alias = ?1, balance = ?2 where public_key = ?3",
+            params![self.alias, self.balance, self.public_key],
+        )
+        .map_err(|_| "更新出错".to_string());
+        Ok(self)
+    }
+
+    pub fn query_balance(&self) -> Result<u64, String> {
+        let pubkey = self
+            .public_key
+            .parse()
+            .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))?;
+
+        let balance = Self::get_rpc_client(self.network)
+            .get_balance(&pubkey)
+            .map_err(|e| format!("查询余额失败: {}", e))?;
+
+        Ok(balance)
+    }
+
+    pub fn new(conn: &Connection, network: Option<SolanaNetwork>) -> Result<Self, String> {
         // 读取已有钱包,如果已经有5个,则不允许创建新钱包
-        let existing_wallets: Vec<WalletInfo> = WalletInfo::load_from_file()?;
+        let existing_wallets: Vec<WalletInfo> =
+            Self::query_all(&conn).map_err(|e| e.to_string())?;
+
         if existing_wallets.len() >= 5 {
             return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
         }
@@ -78,15 +148,10 @@ impl WalletInfo {
             .map_err(|e| e.to_string())?;
 
         let wallets: Vec<WalletInfo> = rows
-            .map(|r| r.map_err(|e| e.to_string())) // 转换每个元素的错误
+            .map(|r| r.map_err(|e| e.to_string()))
             .collect::<Result<_, _>>()?;
 
         Ok(wallets)
-    }
-
-    fn get_wallet_path() -> PathBuf {
-        let home: String = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(WALLET_FILE_PATH)
     }
 
     // 获取 RPC 客户端
@@ -94,167 +159,37 @@ impl WalletInfo {
         RpcClient::new(network.url().to_string())
     }
 
-    pub fn refresh_balance() -> Result<Vec<Self>, String> {
-        // 1. 获取钱包列表
-        let mut wallets = Self::load_from_file()?;
+    pub fn refresh_all_balance(conn: &Connection) -> Result<Vec<Self>, String> {
+        let wallets: Vec<WalletInfo> = Self::query_all(conn)?;
+        let results = Arc::new(Mutex::new(Vec::new()));
 
-        // 2. 使用多线程查询余额
         let handles: Vec<_> = wallets
-            .iter()
+            .into_iter()
             .map(|wallet| {
-                let wallet_clone = wallet.clone();
-                std::thread::spawn(move || {
-                    let client = Self::get_rpc_client(wallet_clone.network);
-                    // TODO 添加对网络情况的判断
-                    match client.get_balance(&wallet_clone.public_key.parse().unwrap()) {
-                        Ok(balance) => (wallet_clone.public_key.clone(), Some(balance)),
-                        Err(_) => (wallet_clone.public_key.clone(), None),
+                let results = Arc::clone(&results);
+                thread::spawn(move || {
+                    let balance = wallet.query_balance().unwrap_or_default();
+                    if wallet.balance != Some(balance) {
+                        let mut w = wallet;
+                        w.balance = Some(balance);
+                        results.lock().unwrap().push(w);
                     }
                 })
             })
             .collect();
 
-        // 等待所有线程完成并收集结果
-        let results: Vec<(String, Option<u64>)> = handles
-            .into_iter()
-            .map(|handle| handle.join().unwrap())
-            .collect();
-
-        // 3. 更新钱包余额
-        for wallet in wallets.iter_mut() {
-            if let Some((_, balance)) = results
-                .iter()
-                .find(|(pubkey, _)| pubkey == &wallet.public_key)
-            {
-                wallet.balance = *balance;
-            }
+        // 等待所有线程结束
+        for handle in handles {
+            let _ = handle.join();
         }
 
-        // 4. 保存更新后的钱包列表到文件
-        let json = serde_json::to_string_pretty(&wallets)
-            .map_err(|e| format!("Failed to serialize wallet: {}", e))?;
+        let change_list: Vec<WalletInfo> = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
-        let wallet_path = Self::get_wallet_path();
-        std::fs::write(&wallet_path, json)
-            .map_err(|e| format!("Failed to write wallet file: {}", e))?;
-
-        Ok(wallets)
-    }
-
-    // 从文件加载钱包信息
-    pub fn load_from_file() -> Result<Vec<Self>, String> {
-        let wallet_path: PathBuf = Self::get_wallet_path();
-
-        // 如果钱包文件不存在, 则返回空集合
-        if !wallet_path.exists() {
-            return Ok(Vec::new());
+        // 第2步：在主线程更新数据库
+        for wallet in &change_list {
+            wallet.update(conn)?;
         }
 
-        // 读取文件内容
-        let json: String = std::fs::read_to_string(&wallet_path)
-            .map_err(|e: std::io::Error| format!("无法读取钱包文件: {}", e))?;
-
-        serde_json::from_str(&json).map_err(|e| format!("无法解析钱包文件: {}", e))
-    }
-
-    pub fn create_new_wallet(network: Option<SolanaNetwork>) -> Result<Vec<Self>, String> {
-        // 读取已有钱包,如果已经有5个,则不允许创建新钱包
-        let existing_wallets: Vec<WalletInfo> = WalletInfo::load_from_file()?;
-        if existing_wallets.len() >= 5 {
-            return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
-        }
-
-        // 如果没有指定网络，默认使用 Devnet
-        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Devnet);
-        // 生成新的密钥对
-        let keypair: Keypair = Keypair::new();
-        // 获取公钥
-        let public_key: String = keypair.pubkey().to_string();
-        // 获取私钥（转换为 base58 格式）
-        let private_key: String = bs58::encode(keypair.to_bytes()).into_string();
-        // 初始化 RPC 客户端（将来用于查询余额等操作）
-        let _client: RpcClient = Self::get_rpc_client(network);
-
-        let wallet_info: WalletInfo = WalletInfo {
-            public_key,
-            private_key,
-            network,
-            balance: Some(0), // 新创建的钱包余额为 0
-            alias: None,      // 初始没有别名
-        };
-
-        // 保存钱包信息到本地文件
-        wallet_info.save_to_file()?;
-
-        WalletInfo::load_from_file()
-    }
-
-    pub fn query_by_public_key(public_key: &str) -> Result<Self, String> {
-        let wallet_list = WalletInfo::load_from_file()?;
-        for wallet in wallet_list {
-            if wallet.public_key == public_key {
-                return Ok(wallet);
-            }
-        }
-        Err("未找到对应钱包".to_string())
-    }
-
-    pub fn set_alias(mut self, new_alias: &str) -> Result<Vec<Self>, String> {
-        self.alias = Some(new_alias.to_string());
-
-        // 读取所有钱包
-        let mut wallets = Self::load_from_file()?;
-
-        // 找到并更新对应钱包的别名
-        for wallet in wallets.iter_mut() {
-            if wallet.public_key == self.public_key {
-                wallet.alias = Some(new_alias.to_string());
-                break;
-            }
-        }
-
-        // 将更新后的钱包列表保存回文件
-        let json = serde_json::to_string_pretty(&wallets)
-            .map_err(|e| format!("Failed to serialize wallet: {}", e))?;
-
-        let wallet_path = Self::get_wallet_path();
-        std::fs::write(&wallet_path, json)
-            .map_err(|e| format!("Failed to write wallet file: {}", e))?;
-
-        Ok(wallets)
-    }
-
-    pub fn delete_wallet(self) -> Result<Vec<Self>, String> {
-        let mut wallets = Self::load_from_file()?;
-
-        // 如果账户还有余额,则不允许删除
-        let client = Self::get_rpc_client(self.network);
-        // 解析公钥，避免使用 unwrap
-        let pubkey = self
-            .public_key
-            .parse()
-            .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))?;
-
-        // 查询余额并将 RPC 错误映射为 String
-        let balance = client
-            .get_balance(&pubkey)
-            .map_err(|e| format!("查询余额失败: {}", e))?;
-
-        if balance != 0 {
-            return Err("余额不为0,禁止删除".to_string());
-        }
-
-        // 保留不匹配的钱包（即删除匹配的钱包）
-        wallets.retain(|wallet| wallet.public_key != self.public_key);
-
-        // 将更新后的钱包列表保存回文件
-        let json = serde_json::to_string_pretty(&wallets)
-            .map_err(|e| format!("Failed to serialize wallet: {}", e))?;
-
-        let wallet_path = Self::get_wallet_path();
-        std::fs::write(&wallet_path, json)
-            .map_err(|e| format!("Failed to write wallet file: {}", e))?;
-
-        Ok(wallets)
+        Ok(change_list)
     }
 }
