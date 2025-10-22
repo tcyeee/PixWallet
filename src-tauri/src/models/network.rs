@@ -17,6 +17,16 @@ impl SolanaNetwork {
             SolanaNetwork::Local => "http://127.0.0.1:8899",
         }
     }
+
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "mainnet" => SolanaNetwork::Mainnet,
+            "testnet" => SolanaNetwork::Testnet,
+            "devnet" => SolanaNetwork::Devnet,
+            "local" => SolanaNetwork::Local,
+            _ => SolanaNetwork::Local,
+        }
+    }
 }
 
 impl std::fmt::Display for SolanaNetwork {

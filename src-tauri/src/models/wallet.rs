@@ -1,3 +1,4 @@
+use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::signature::{Keypair, Signer};
@@ -17,6 +18,72 @@ pub struct WalletInfo {
 const WALLET_FILE_PATH: &str = ".solana-wallet/wallet.json";
 
 impl WalletInfo {
+    pub fn insert(&self, conn: &Connection) -> Result<(), rusqlite::Error> {
+        conn.execute(
+            "insert into wallet(public_key, private_key, network, balance, alias) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![self.public_key,self.private_key,self.network.to_string(),self.balance,self.alias],
+        )?;
+        Ok(())
+    }
+
+    pub fn new(network: Option<SolanaNetwork>) -> Result<Self, String> {
+        // 读取已有钱包,如果已经有5个,则不允许创建新钱包
+        let existing_wallets: Vec<WalletInfo> = WalletInfo::load_from_file()?;
+        if existing_wallets.len() >= 5 {
+            return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
+        }
+        // 如果没有指定网络，默认使用 Devnet
+        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Devnet);
+        // 生成新的密钥对
+        let keypair: Keypair = Keypair::new();
+        // 获取公钥
+        let public_key: String = keypair.pubkey().to_string();
+        // 获取私钥（转换为 base58 格式）
+        let private_key: String = bs58::encode(keypair.to_bytes()).into_string();
+        // 初始化 RPC 客户端（将来用于查询余额等操作）
+        let _client: RpcClient = Self::get_rpc_client(network);
+
+        let wallet_info: WalletInfo = WalletInfo {
+            public_key,
+            private_key,
+            network,
+            balance: Some(0), // 新创建的钱包余额为 0
+            alias: None,      // 初始没有别名
+        };
+        Ok(wallet_info)
+    }
+
+    pub fn query_all(conn: &Connection) -> Result<Vec<Self>, String> {
+        let mut stmt = conn
+            .prepare(
+                "
+            select public_key, private_key, network, balance, alias
+            from wallet
+            limit 10
+        ",
+            )
+            .map_err(|e| e.to_string())?;
+
+        let rows = stmt
+            .query_map([], |row| {
+                let network_str: String = row.get(2)?;
+                Ok(WalletInfo {
+                    public_key: row.get(0)?,
+                    private_key: row.get(1)?,
+                    network: SolanaNetwork::from_str(&network_str),
+                    balance: row.get(3)?,
+                    alias: row.get(4)?,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+
+        let wallets: Vec<WalletInfo> = rows
+            .map(|r| r.map_err(|e| e.to_string())) // 转换每个元素的错误
+            .collect::<Result<_, _>>()?;
+
+        Ok(wallets)
+    }
+
     fn get_wallet_path() -> PathBuf {
         let home: String = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         PathBuf::from(home).join(WALLET_FILE_PATH)
@@ -25,39 +92,6 @@ impl WalletInfo {
     // 获取 RPC 客户端
     fn get_rpc_client(network: SolanaNetwork) -> RpcClient {
         RpcClient::new(network.url().to_string())
-    }
-
-    /**
-     * 存储钱包到钱包列表
-     * 1. 拿到原有的钱包列表(最多不能超过5个)
-     * 2. 更新钱包列表,新创建的钱包放在最上面.
-     */
-    pub fn save_to_file(&self) -> Result<(), String> {
-        let wallet_path: PathBuf = Self::get_wallet_path();
-
-        // 确保目录存在
-        if let Some(parent) = wallet_path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e: std::io::Error| format!("Failed to create directory: {}", e))?;
-        }
-
-        // 拿到原有的钱包列表(最多不能超过5个)
-        let mut wallets: Vec<WalletInfo> = Self::load_from_file()?;
-        if wallets.len() >= 5 {
-            return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
-        }
-
-        // 将新创建的钱包放在最前面
-        wallets.insert(0, self.clone());
-
-        // 序列化钱包信息为 JSON
-        let json: String = serde_json::to_string_pretty(&wallets)
-            .map_err(|e: serde_json::Error| format!("Failed to serialize wallet: {}", e))?;
-
-        std::fs::write(&wallet_path, json)
-            .map_err(|e: std::io::Error| format!("Failed to write wallet file: {}", e))?;
-
-        Ok(())
     }
 
     pub fn refresh_balance() -> Result<Vec<Self>, String> {

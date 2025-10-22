@@ -1,16 +1,26 @@
 use crate::models::network::SolanaNetwork;
 use crate::models::wallet::WalletInfo;
+use rusqlite::Connection;
+use std::sync::Mutex;
+use tauri::State;
 use tauri::{AppHandle, Emitter};
-
-// 创建新的钱包
-#[tauri::command]
-pub fn create_wallet(network: Option<SolanaNetwork>) -> Result<Vec<WalletInfo>, String> {
-    WalletInfo::create_new_wallet(network)
-}
 
 // 查询钱包信息
 #[tauri::command]
-pub fn query_wallet() -> Result<Vec<WalletInfo>, String> {
+pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Result<Vec<WalletInfo>, String> {
+    let conn = conn_state.lock().unwrap();
+    WalletInfo::query_all(&conn)
+}
+
+// 创建新的钱包
+#[tauri::command]
+pub fn create_wallet(
+    conn_state: State<'_, Mutex<Connection>>,
+    network: Option<SolanaNetwork>,
+) -> Result<Vec<WalletInfo>, String> {
+    let conn = conn_state.lock().unwrap();
+    let wallet = WalletInfo::new(network)?;
+    wallet.insert(&conn).map_err(|e| e.to_string())?;
     WalletInfo::load_from_file()
 }
 
