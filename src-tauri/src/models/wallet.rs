@@ -58,12 +58,18 @@ impl WalletInfo {
         .map_err(|_| "删除失败".to_string())
     }
 
-    pub fn update(&self, conn: &Connection) -> Result<usize, String> {
-        conn.execute(
-            "update wallet set alias = ?1, balance = ?2 where public_key = ?3",
-            params![self.alias, self.balance, self.public_key],
-        )
-        .map_err(|_| "更新出错".to_string())
+    pub fn update(&self, conn: &Connection) {
+        let info = conn
+            .execute(
+                "update wallet set alias = ?1, balance = ?2 where public_key = ?3",
+                params![self.alias, self.balance, self.public_key],
+            )
+            .map_err(|_| "更新出错".to_string());
+
+        match info {
+            Ok(_) => (),
+            Err(e) => println!("{}", e),
+        }
     }
 
     pub fn query_balance(&self) -> Result<u64, String> {
@@ -144,8 +150,11 @@ impl WalletInfo {
         RpcClient::new(network.url().to_string())
     }
 
-    pub fn refresh_all_balance(conn: &Connection) -> Result<Vec<Self>, String> {
-        let wallets: Vec<WalletInfo> = Self::query_all(conn)?;
+    /**
+     * 异步查询钱包余额
+     * 查询完成以后,将会返回所有有变动的钱包信息
+     */
+    pub fn refresh_wallet(wallets: Vec<WalletInfo>) -> Result<Vec<WalletInfo>, String> {
         let results = Arc::new(Mutex::new(Vec::new()));
 
         let handles: Vec<_> = wallets
@@ -153,7 +162,9 @@ impl WalletInfo {
             .map(|wallet| {
                 let results = Arc::clone(&results);
                 thread::spawn(move || {
+                    println!("[DEBUG] 正在查询账户: {}", wallet.public_key);
                     let balance = wallet.query_balance().unwrap_or_default();
+                    println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
                     if wallet.balance != Some(balance) {
                         let mut w = wallet;
                         w.balance = Some(balance);
@@ -168,13 +179,9 @@ impl WalletInfo {
             let _ = handle.join();
         }
 
-        let change_list: Vec<WalletInfo> = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
-
-        // 第2步：在主线程更新数据库
-        for wallet in &change_list {
-            wallet.update(conn)?;
-        }
-
-        Ok(change_list)
+        Arc::try_unwrap(results)
+            .unwrap()
+            .into_inner()
+            .map_err(|e| e.to_string())
     }
 }

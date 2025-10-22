@@ -48,6 +48,7 @@ const loadingRefreshBalance = ref(false);
 function refreshBalance() {
   loadingRefreshBalance.value = true;
   API.WalletBalanceRefresh();
+  // API.AsyncTest();
 }
 
 // 创建钱包
@@ -61,8 +62,14 @@ function createWallet() {
     .finally(() => (loadingCreateWallet.value = false));
 }
 
-listen<Array<WalletInfo>>(MsgType.BALANCE.toString(), (event) => {
+listen<null>(MsgType.BALANCE_REFRESH_END, () => {
   loadingRefreshBalance.value = false;
-  walletList.value = event.payload;
+});
+
+listen<WalletInfo>(MsgType.BALANCE_CHANGE, (event) => {
+  let wallet = event.payload;
+  walletList.value.forEach((item) => {
+    if (item.public_key == wallet.public_key) Object.assign(item, wallet);
+  });
 });
 </script>

@@ -7,8 +7,9 @@ mod service;
 
 use db::establish_connection;
 
+#[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-fn main() {
+async fn main() {
     let conn_state = establish_connection().expect("Failed to connect to database");
 
     tauri::Builder::default()

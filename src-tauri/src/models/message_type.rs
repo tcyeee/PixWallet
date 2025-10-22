@@ -1,14 +1,14 @@
 #[derive(Debug)]
 pub enum MsgType {
-    Wallets,
-    Balance,
+    BalanceRefreshEnd,
+    BalanceChange,
 }
 
 impl MsgType {
     pub fn name(&self) -> &'static str {
         match self {
-            MsgType::Wallets => "WALLETS",
-            MsgType::Balance => "BALANCE",
+            MsgType::BalanceRefreshEnd => "BALANCE_REFRESH_END",
+            MsgType::BalanceChange => "BALANCE_CHANGE",
         }
     }
 }
