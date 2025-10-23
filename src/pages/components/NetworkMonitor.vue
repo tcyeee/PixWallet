@@ -4,7 +4,10 @@
       <div v-if="networkFlag" class="status status-lg animate-ping" :class="[statusColor]"></div>
       <div class="status status-lg" :class="[statusColor]"></div>
     </div>
-    <div class="text-green-400 text-sm" :class="[textColor]">{{ network?.ping }}</div>
+    <div class="text-gray-400 text-sm" :class="[textColor]">
+      <div v-if="network">{{ network?.ping }}</div>
+      <div v-else class="text-gray-400">loading...</div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
