@@ -71,3 +71,8 @@ pub async fn refresh_balance(
     app.emit(MsgType::BalanceRefreshEnd.name(), ()).unwrap();
     Ok(())
 }
+
+#[tauri::command]
+pub async fn transfer() -> Result<(), String> {
+    Ok(())
+}

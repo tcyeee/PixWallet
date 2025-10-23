@@ -10,7 +10,6 @@ export const useUserStore = defineStore('app', {
     actions: {
         ping(statue: NetworkStatus) {
             this.network = statue;
-            console.log(`[PING]: ${statue.ping}ms`);
         },
         async updateWallets() {
             this.wallets = await API.WalletList();
@@ -23,5 +22,6 @@ export const useUserStore = defineStore('app', {
         addWallet(wallet: WalletInfo) {
             this.wallets.push(wallet)
         }
-    }
+    },
+    persist: true
 })

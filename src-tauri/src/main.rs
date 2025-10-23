@@ -22,6 +22,7 @@ async fn main() {
             service::wallet::change_alias,
             service::wallet::delete_wallet,
             service::wallet::refresh_balance,
+            service::wallet::transfer,
         ])
         .setup(|app| {
             let app_handle = app.handle();

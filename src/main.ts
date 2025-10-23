@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
+import piniaPersistedstate from 'pinia-plugin-persistedstate'
 import App from "./App.vue";
 import { notify } from './utils/notify'
 import { alert } from './utils/alert'
@@ -7,7 +8,8 @@ import router from './router/init'
 import './assets/global.css';
 import { setupTauriListener } from './plugins/tauriListener'
 
-const pinia = createPinia();
+const pinia = createPinia()
+    .use(piniaPersistedstate)
 
 createApp(App)
     .use(pinia)

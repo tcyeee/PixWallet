@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="text-8xl font-bold text-gray-300">HOME</div>
+    <div class="text-9xl font-bold text-gray-300">PixWallet</div>
     <NetworkMonitor />
     <WalletList class="mt-5" />
   </div>
