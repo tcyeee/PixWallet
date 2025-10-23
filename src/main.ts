@@ -7,15 +7,15 @@ import router from './router/init'
 import './assets/global.css';
 import { setupTauriListener } from './plugins/tauriListener'
 
-// 添加Alert & Message 信号监听
-setupTauriListener()
-
-const app = createApp(App);
 const pinia = createPinia();
+
+createApp(App)
+    .use(pinia)
+    .use(router)
+    .mount("#app")
 
 window.Notify = notify
 window.Alert = alert
 
-app.use(pinia);
-app.use(router);
-app.mount("#app");
+/* 监听方法, 这里面用到了pinia,报错了 */
+setupTauriListener(pinia)

@@ -1,34 +1,33 @@
 <template>
   <div class="flex items-center gap-2">
     <div class="inline-grid *:[grid-area:1/1]">
-      <div v-if="networkFlag" class="status status-lg animate-ping" :class="[statusColor]"></div>
+      <div v-if="appStore.network?.status && appStore.network.status != NetworkHealth.LOST" class="status status-lg animate-ping" :class="[statusColor]"></div>
       <div class="status status-lg" :class="[statusColor]"></div>
     </div>
     <div class="text-gray-400 text-sm" :class="[textColor]">
-      <div v-if="network">{{ network?.ping }}</div>
+      <div v-if="appStore.network">{{ appStore.network.ping + 'ms' }}</div>
       <div v-else class="text-gray-400">loading...</div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { MsgType, NetworkHealth, NetworkStatus } from "@/models";
-import { listen } from "@tauri-apps/api/event";
-import { ref, computed, watch } from "vue";
+import { NetworkHealth, NetworkStatus } from "@/models";
+import { ref, watch, onMounted } from "vue";
+import { useAppStore } from "@/stores/app";
 
-const networkFlag = computed(() => {
-  return network.value && network.value?.status != NetworkHealth.LOST;
-});
+const appStore = useAppStore();
+watch(
+  () => appStore.network,
+  (network) => setClass(network),
+  { deep: true }
+);
 
-const network = ref<NetworkStatus>();
-listen<NetworkStatus>(MsgType.PING, (event) => {
-  network.value = event.payload;
-});
+onMounted(() => setClass(appStore.network));
 
 const statusColor = ref("");
 const textColor = ref("text-red-400");
-watch(network, (newVal) => {
-  if (!newVal) return;
-  switch (newVal.status) {
+function setClass(network: NetworkStatus) {
+  switch (network.status) {
     case NetworkHealth.GOOD:
       statusColor.value = "status-success";
       textColor.value = "text-green-400";
@@ -43,5 +42,5 @@ watch(network, (newVal) => {
       textColor.value = "text-red-400";
       break;
   }
-});
+}
 </script>
