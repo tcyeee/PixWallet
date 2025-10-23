@@ -1,11 +1,11 @@
 <template>
   <div class="flex items-center gap-2">
     <div class="inline-grid *:[grid-area:1/1]">
-      <div v-if="appStore.network?.status && appStore.network.status != NetworkHealth.LOST" class="status status-lg animate-ping" :class="[statusColor]"></div>
+      <div v-if="userStore.network?.status && userStore.network.status != NetworkHealth.LOST" class="status status-lg animate-ping" :class="[statusColor]"></div>
       <div class="status status-lg" :class="[statusColor]"></div>
     </div>
     <div class="text-gray-400 text-sm" :class="[textColor]">
-      <div v-if="appStore.network">{{ appStore.network.ping + 'ms' }}</div>
+      <div v-if="userStore.network">{{ userStore.network.ping + 'ms' }}</div>
       <div v-else class="text-gray-400">loading...</div>
     </div>
   </div>
@@ -13,16 +13,16 @@
 <script setup lang="ts">
 import { NetworkHealth, NetworkStatus } from "@/models";
 import { ref, watch, onMounted } from "vue";
-import { useAppStore } from "@/stores/app";
+import { useUserStore } from "@/stores/user";
 
-const appStore = useAppStore();
+const userStore = useUserStore();
 watch(
-  () => appStore.network,
+  () => userStore.network,
   (network) => setClass(network),
   { deep: true }
 );
 
-onMounted(() => setClass(appStore.network));
+onMounted(() => setClass(userStore.network));
 
 const statusColor = ref("");
 const textColor = ref("text-red-400");
