@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use solana_client::rpc_client::RpcClient;
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum SolanaNetwork {
     Mainnet,
     Testnet,
@@ -16,5 +17,35 @@ impl SolanaNetwork {
             SolanaNetwork::Devnet => "https://api.devnet.solana.com",
             SolanaNetwork::Local => "http://127.0.0.1:8899",
         }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "mainnet" => SolanaNetwork::Mainnet,
+            "testnet" => SolanaNetwork::Testnet,
+            "devnet" => SolanaNetwork::Devnet,
+            "local" => SolanaNetwork::Local,
+            _ => SolanaNetwork::Local,
+        }
+    }
+
+    // 获取 RPC 客户端
+    pub fn get_rpc_client(network: SolanaNetwork) -> RpcClient {
+        RpcClient::new(network.url().to_string())
+    }
+}
+
+impl std::fmt::Display for SolanaNetwork {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SolanaNetwork::Mainnet => "mainnet",
+                SolanaNetwork::Devnet => "devnet",
+                SolanaNetwork::Testnet => "testnet",
+                SolanaNetwork::Local => "local",
+            }
+        )
     }
 }

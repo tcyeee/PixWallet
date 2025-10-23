@@ -1,13 +1,15 @@
 <template>
   <div v-bind="$attrs" class="flex gap-2">
-    <button type="submit" class="btn btn-primary" @click="createWallet()">Create wallet</button>
+    <button type="submit" class="btn btn-primary" @click="createWallet()">
+      <span v-if="loadingCreateWallet" class="loading loading-spinner"></span>
+      Create wallet</button>
     <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
       <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
       Refresh Balance
     </button>
+    <button type="submit" class="btn btn-primary" @click="NAV.GoTo('transfer')">Transfer</button>
   </div>
   <table class="table m-w-[300px]">
-    <!-- head -->
     <thead>
       <tr>
         <th></th>
@@ -18,8 +20,7 @@
       </tr>
     </thead>
     <tbody>
-      <!-- row 1 -->
-      <tr v-for="(item,index) in walletList" :key="item.public_key" @click="selectOne(item)">
+      <tr v-for="(item,index) in userStore.wallets" :key="item.public_key" @click="NAV.GoTo('wallet', item)">
         <th>{{ index+1 }}</th>
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
@@ -31,54 +32,36 @@
 </template>
 
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
-import { WalletInfo } from "@/models";
-import { useNav } from "@/hooks/useNav";
+import { MsgType } from "@/models";
+import { formatSol } from "@/utils/common";
+import API from "@/api";
+import NAV from "@/router";
+import { useUserStore } from "@/stores/user";
 
-const { goTo } = useNav();
+const userStore = useUserStore();
 
 onMounted(async () => {
-  await dataInit();
+  userStore.updateWallets();
 });
 
-var walletList = ref<WalletInfo[]>([]);
-async function dataInit() {
-  try {
-    const res = await invoke<WalletInfo[]>("query_wallet");
-    walletList.value = res || [];
-  } catch (err) {
-    Alert.error(`加载钱包数据失败: ${err}`);
-  }
+// 创建钱包
+const loadingCreateWallet = ref(false);
+function createWallet() {
+  loadingCreateWallet.value = true;
+  API.WalletCreate()
+    .then((wallet) => userStore.addWallet(wallet))
+    .finally(() => (loadingCreateWallet.value = false));
 }
 
+/* 余额刷新 */
 const loadingRefreshBalance = ref(false);
 function refreshBalance() {
   loadingRefreshBalance.value = true;
-  invoke<null>("refresh_balance");
+  API.WalletBalanceRefresh();
 }
-
-listen<Array<WalletInfo>>("refresh_balance", (event) => {
+listen<null>(MsgType.BALANCE_REFRESH_END, () => {
   loadingRefreshBalance.value = false;
-  walletList.value = event.payload;
 });
-
-async function createWallet() {
-  try {
-    const res = await invoke<Array<WalletInfo>>("create_wallet");
-    walletList.value = res;
-  } catch (e) {
-    Alert.error(e as string);
-  }
-}
-
-function selectOne(wallet: WalletInfo) {
-  goTo("wallet", wallet);
-}
-
-function formatSol(lamport: number | undefined): string {
-  if (!lamport) return "0 SOL";
-  return (lamport / 1_000_000_000).toFixed(2) + " SOL";
-}
 </script>

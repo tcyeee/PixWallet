@@ -22,3 +22,5 @@ serde_json = "1"
 solana-sdk = "3.0.0"
 solana-client = "3.0.0"
 bs58 = "0.5.0"
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+tokio = "1.48.0"

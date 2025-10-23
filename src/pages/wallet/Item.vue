@@ -1,5 +1,5 @@
 <template>
-  <button class="btn" @click="goHome()">Return</button>
+  <button class="btn" @click="NAV.Home()">Return</button>
 
   <div class="space-y-2 mb-4">
     <div class="flex items-center">
@@ -23,13 +23,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { ref } from "vue";
-import { useNav } from "@/hooks/useNav";
-import { WalletInfo } from "@/models";
+import API from "@/api";
+import { useRoute } from "vue-router";
+import NAV from "@/router";
 
-const { goHome, pageQuery } = useNav();
-const walletInfo = pageQuery();
+const route = useRoute();
+const walletInfo = route.query;
 
 const alias = ref("");
 function changeAlias() {
@@ -37,11 +37,10 @@ function changeAlias() {
     publicKey: walletInfo?.public_key,
     newAlias: alias.value,
   };
-  invoke<Array<WalletInfo>>("change_alias", params);
+  API.WalletAliasUpdate(params);
 }
 
 function deleteAccount() {
-  const params = { publicKey: walletInfo?.public_key };
-  invoke<Array<WalletInfo>>("delete_wallet", params);
+  API.WalletDel({ publicKey: walletInfo?.public_key });
 }
 </script>
