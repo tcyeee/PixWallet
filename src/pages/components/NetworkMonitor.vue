@@ -5,7 +5,7 @@
       <div class="status status-lg" :class="[statusColor]"></div>
     </div>
     <div class="text-gray-400 text-sm" :class="[textColor]">
-      <div v-if="userStore.network">{{ userStore.network.ping + 'ms' }}</div>
+      <div v-if="userStore.network.ping">{{ userStore.network.ping + 'ms' }}</div>
       <div v-else class="text-gray-400">loading...</div>
     </div>
   </div>

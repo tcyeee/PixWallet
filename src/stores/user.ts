@@ -1,5 +1,6 @@
 import { NetworkStatus, WalletInfo } from "@/models";
 import { defineStore } from "pinia";
+import API from "@/api";
 
 export const useUserStore = defineStore('app', {
     state: () => ({
@@ -10,6 +11,17 @@ export const useUserStore = defineStore('app', {
         ping(statue: NetworkStatus) {
             this.network = statue;
             console.log(`[PING]: ${statue.ping}ms`);
+        },
+        async updateWallets() {
+            this.wallets = await API.WalletList();
+        },
+        updateWallet(wallet: WalletInfo) {
+            this.wallets.forEach((item) => {
+                if (item.public_key == wallet.public_key) Object.assign(item, wallet);
+            });
+        },
+        addWallet(wallet: WalletInfo) {
+            this.wallets.push(wallet)
         }
     }
 })

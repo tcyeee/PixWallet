@@ -15,12 +15,11 @@ pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Result<Vec<Wall
 pub fn create_wallet(
     conn_state: State<'_, Mutex<Connection>>,
     network: Option<SolanaNetwork>,
-) -> Result<Vec<WalletInfo>, String> {
+) -> Result<WalletInfo, String> {
     let conn = conn_state.lock().unwrap();
     let wallet = WalletInfo::new(&conn, network)?;
     wallet.insert(&conn).map_err(|e| e.to_string())?;
-
-    WalletInfo::query_all(&conn)
+    Ok(wallet)
 }
 
 #[tauri::command]
