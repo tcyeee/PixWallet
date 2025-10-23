@@ -23,6 +23,11 @@ async fn main() {
             service::wallet::delete_wallet,
             service::wallet::refresh_balance,
         ])
+        .setup(|app| {
+            let app_handle = app.handle();
+            service::network_monitor::start_monitor(app_handle.clone());
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use solana_client::rpc_client::RpcClient;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum SolanaNetwork {
@@ -26,6 +27,11 @@ impl SolanaNetwork {
             "local" => SolanaNetwork::Local,
             _ => SolanaNetwork::Local,
         }
+    }
+
+    // 获取 RPC 客户端
+    pub fn get_rpc_client(network: SolanaNetwork) -> RpcClient {
+        RpcClient::new(network.url().to_string())
     }
 }
 

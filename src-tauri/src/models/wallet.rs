@@ -78,7 +78,7 @@ impl WalletInfo {
             .parse()
             .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))?;
 
-        let balance = Self::get_rpc_client(self.network)
+        let balance = SolanaNetwork::get_rpc_client(self.network)
             .get_balance(&pubkey)
             .map_err(|e| format!("查询余额失败: {}", e))?;
 
@@ -102,7 +102,7 @@ impl WalletInfo {
         // 获取私钥（转换为 base58 格式）
         let private_key: String = bs58::encode(keypair.to_bytes()).into_string();
         // 初始化 RPC 客户端（将来用于查询余额等操作）
-        let _client: RpcClient = Self::get_rpc_client(network);
+        let _client: RpcClient = SolanaNetwork::get_rpc_client(network);
 
         let wallet_info: WalletInfo = WalletInfo {
             public_key,
@@ -143,11 +143,6 @@ impl WalletInfo {
             .collect::<Result<_, _>>()?;
 
         Ok(wallets)
-    }
-
-    // 获取 RPC 客户端
-    fn get_rpc_client(network: SolanaNetwork) -> RpcClient {
-        RpcClient::new(network.url().to_string())
     }
 
     /**
