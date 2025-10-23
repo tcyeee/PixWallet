@@ -67,6 +67,7 @@ listen<null>(MsgType.BALANCE_REFRESH_END, () => {
 
 listen<WalletInfo>(MsgType.BALANCE_CHANGE, (event) => {
   let wallet = event.payload;
+  console.log(event.payload);
   walletList.value.forEach((item) => {
     if (item.public_key == wallet.public_key) Object.assign(item, wallet);
   });

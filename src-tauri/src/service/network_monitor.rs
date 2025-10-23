@@ -1,8 +1,8 @@
 use crate::models::{message_type::MsgType, network::SolanaNetwork};
-use solana_client::client_error::ClientError;
 use solana_client::rpc_client::RpcClient;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter};
+use tokio::time::timeout;
 use tokio::time::{sleep, Duration};
 
 #[derive(serde::Serialize, Clone, Debug)]
@@ -41,27 +41,28 @@ pub fn start_monitor(app: AppHandle) {
     tokio::spawn(async move {
         let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Devnet);
         loop {
-            check(&client, &app);
+            check(&client, &app).await;
             sleep(Duration::from_secs(5)).await;
         }
     });
 }
 
-pub fn check(client: &RpcClient, app: &AppHandle) {
+pub async fn check(client: &RpcClient, app: &AppHandle) {
     let start = Instant::now();
-    let health: Result<(), ClientError> = client.get_health();
-    let elapsed = start.elapsed();
-    match health {
-        Ok(_) => {
-            if elapsed.as_millis() <= 1000 {
-                send(app, NetworkStatus::Good(elapsed.as_millis()));
-            } else {
-                send(app, NetworkStatus::Poor(elapsed.as_millis()));
+    let result = timeout(Duration::from_secs(5), async { client.get_health() }).await;
+    let elapsed = start.elapsed().as_millis();
+    match result {
+        Ok(health) => match health {
+            Ok(_) => {
+                if elapsed <= 1000 {
+                    send(app, NetworkStatus::Good(elapsed));
+                } else {
+                    send(app, NetworkStatus::Poor(elapsed));
+                }
             }
-        }
-        Err(_) => {
-            send(app, NetworkStatus::Lost(elapsed.as_millis()));
-        }
+            Err(_) => send(app, NetworkStatus::Lost(elapsed)),
+        },
+        Err(_) => send(app, NetworkStatus::Lost(9999)),
     }
 }
 
