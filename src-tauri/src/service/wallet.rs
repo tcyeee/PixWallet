@@ -1,3 +1,4 @@
+use crate::models::dto::TransferParams;
 use crate::models::wallet::WalletInfo;
 use crate::models::{message_type::MsgType, network::SolanaNetwork};
 use rusqlite::Connection;
@@ -73,6 +74,14 @@ pub async fn refresh_balance(
 }
 
 #[tauri::command]
-pub async fn transfer() -> Result<(), String> {
+pub async fn transfer(
+    conn_state: State<'_, Mutex<Connection>>,
+    params: TransferParams,
+) -> Result<(), String> {
+    let conn = conn_state.lock().unwrap();
+    let wallet = WalletInfo::query_by_public_key(&conn, &params.paying)?;
+    let receiving = WalletInfo::query_by_public_key(&conn, &params.receiving)?;
+    let receiving_public_key = receiving.pubkey()?;
+    wallet.transfer(receiving_public_key, params.amount)?;
     Ok(())
 }

@@ -24,3 +24,9 @@ export type NetworkStatus = {
     status: string,
     ping: Number,
 }
+
+export type TransferParams = {
+    paying: string,
+    receiving: string,
+    amount: number,
+}
