@@ -1,6 +1,19 @@
 <template>
   <button class="btn" @click="NAV.Home()">Return</button>
 
+  <div class="card bg-base-100 w-96 shadow-sm bg-gradient-to-r from-[#ff7e5f] to-[#feb47b] mt-10">
+    <div class="card-body">
+      <div>
+        <h2 class="card-title">{{ walletInfo.alias }}</h2>
+        <div>{{ walletInfo.balance }} SOL</div>
+      </div>
+      <span class="truncate break-all max-w-full text-sm py-1 rounded bg-gray-500/10 text-gray-600 pl-1">{{ walletInfo.public_key }}</span>
+    </div>
+  </div>
+  <div class="mt-3 flex mb-10">
+    <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
+  </div>
+
   <div class="space-y-2 mb-4">
     <div class="flex items-center">
       <span class="w-24 font-medium">Alias:</span>
@@ -13,23 +26,29 @@
       <span class="w-24 font-medium">Network:</span>
       <span class="truncate">{{ walletInfo.network }}</span>
     </div>
-    <div class="flex items-center">
-      <span class="w-24 font-medium">Public Key:</span>
-      <span class="truncate break-all max-w-full text-sm bg-base-200 px-2 py-1 rounded">{{ walletInfo.public_key }}</span>
-    </div>
   </div>
-  <div class="flex justify-end gap-2">
-    <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
-  </div>
+
+  <hr class="my-5" />
+
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
 import NAV from "@/router";
 
 const route = useRoute();
 const walletInfo = route.query;
+
+onMounted(() => {
+  // 获取账户信息
+  dataInit();
+});
+
+function dataInit() {
+  if (!walletInfo || !walletInfo.public_key) return;
+  API.WalletHistory(String(walletInfo.public_key));
+}
 
 const alias = ref("");
 function changeAlias() {

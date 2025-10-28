@@ -5,7 +5,6 @@ use rusqlite::Connection;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
-// 查询钱包信息
 #[tauri::command]
 pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Result<Vec<WalletInfo>, String> {
     let conn = conn_state.lock().unwrap();
@@ -84,4 +83,14 @@ pub async fn transfer(
     let receiving_public_key = receiving.pubkey()?;
     wallet.transfer(receiving_public_key, params.amount)?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn account_history(
+    conn_state: State<'_, Mutex<Connection>>,
+    public_key: &str,
+) -> Result<(), String> {
+    let conn = conn_state.lock().unwrap();
+    let wallet = WalletInfo::query_by_public_key(&conn, public_key)?;
+    wallet.history()
 }

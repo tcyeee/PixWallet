@@ -2,7 +2,7 @@ use crate::models::network::SolanaNetwork;
 use bs58;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
-use solana_client::rpc_client::RpcClient;
+use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::{
     native_token::LAMPORTS_PER_SOL,
     pubkey::Pubkey,
@@ -22,25 +22,46 @@ pub struct WalletInfo {
     pub network: SolanaNetwork,
     pub balance: Option<u64>,
     pub alias: Option<String>,
+    pub last_update: Option<u64>,
 }
 
 impl WalletInfo {
+    pub fn history(&self) -> Result<(), String> {
+        let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
+        let pubkey = &self.pubkey()?;
+        let signatures = client
+            .get_signatures_for_address_with_config(
+                pubkey,
+                GetConfirmedSignaturesForAddress2Config {
+                    limit: Some(100), // 默认最多1000
+                    before: None,
+                    until: None,
+                    commitment: None,
+                },
+            )
+            .unwrap();
+
+        println!("开始检查账户:{:?}的100条记录", &self.alias);
+        for sig in signatures {
+            println!("Signature: {}, Slot: {}", sig.signature, sig.slot);
+        }
+        Ok(())
+    }
+
     pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
         println!("==================[START]==================");
-        let connection: RpcClient = SolanaNetwork::get_rpc_client(self.network);
+        let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
         let sender: Keypair = self.keypair();
         let transfer_amount = (amount * LAMPORTS_PER_SOL as f32) as u64;
 
         let transfer_instruction = transfer(&sender.pubkey(), &recipient, transfer_amount);
         let mut transaction =
             Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
-        let blockhash = connection
-            .get_latest_blockhash()
-            .map_err(|e| e.to_string())?;
+        let blockhash = client.get_latest_blockhash().map_err(|e| e.to_string())?;
         transaction.sign(&[&sender], blockhash);
 
         // Send the transaction to the network
-        let transaction_signature = connection
+        let transaction_signature = client
             .send_and_confirm_transaction(&transaction)
             .map_err(|e| e.to_string())?;
 
@@ -60,7 +81,7 @@ impl WalletInfo {
 
     pub fn query_by_public_key(conn: &Connection, public_key: &str) -> Result<Self, String> {
         conn.query_row(
-            "select public_key, private_key, network, balance, alias from wallet where public_key = ?1 limit 1",
+            "select public_key, private_key, network, balance, alias, last_update from wallet where public_key = ?1 limit 1",
             params![public_key], |row|{
                 let network_str: String = row.get(2)?;
                 Ok(WalletInfo{
@@ -69,6 +90,7 @@ impl WalletInfo {
                     network: SolanaNetwork::from_str(&network_str) ,
                     balance: row.get(3)?,
                     alias: row.get(4)?,
+                    last_update: row.get(5)?,
                 })
             }
         )
@@ -145,6 +167,7 @@ impl WalletInfo {
             network,
             balance: Some(0), // 新创建的钱包余额为 0
             alias: None,      // 初始没有别名
+            last_update: Some(0),
         };
         Ok(wallet_info)
     }
@@ -153,7 +176,7 @@ impl WalletInfo {
         let mut stmt = conn
             .prepare(
                 "
-            select public_key, private_key, network, balance, alias
+            select public_key, private_key, network, balance, alias, last_update
             from wallet
             limit 10
         ",
@@ -169,6 +192,7 @@ impl WalletInfo {
                     network: SolanaNetwork::from_str(&network_str),
                     balance: row.get(3)?,
                     alias: row.get(4)?,
+                    last_update: row.get(5)?,
                 })
             })
             .map_err(|e| e.to_string())?;

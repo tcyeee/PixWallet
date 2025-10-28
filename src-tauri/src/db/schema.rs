@@ -5,6 +5,7 @@ pub const CREATE_WALLET_INFO_TABLE: &str = "
         private_key TEXT NOT NULL,
         network TEXT NOT NULL,
         balance INTEGER,
-        alias TEXT
+        alias TEXT,
+        last_update INTEGER
     );
 ";
