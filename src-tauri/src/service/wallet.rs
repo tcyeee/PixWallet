@@ -1,24 +1,28 @@
 use crate::models::dto::TransferParams;
-use crate::models::wallet::WalletInfo;
+use crate::models::wallet::Wallet;
 use crate::models::{message_type::MsgType, network::SolanaNetwork};
+use crate::repository::wallet_repo::WalletRepository;
 use rusqlite::Connection;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
-pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Result<Vec<WalletInfo>, String> {
+pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Vec<Wallet> {
     let conn = conn_state.lock().unwrap();
-    WalletInfo::query_all(&conn)
+    let repo = WalletRepository::new(&conn);
+    Wallet::query_all(&repo)
 }
 
 #[tauri::command]
 pub fn create_wallet(
     conn_state: State<'_, Mutex<Connection>>,
     network: Option<SolanaNetwork>,
-) -> Result<WalletInfo, String> {
+) -> Result<Wallet, String> {
     let conn = conn_state.lock().unwrap();
-    let wallet = WalletInfo::new(&conn, network)?;
-    wallet.insert(&conn).map_err(|e| e.to_string())?;
+    let repo = WalletRepository::new(&conn);
+
+    let wallet = Wallet::new(&repo, network)?;
+    wallet.insert(&repo).map_err(|e| e.to_string())?;
     Ok(wallet)
 }
 
@@ -27,26 +31,23 @@ pub fn change_alias(
     conn_state: State<'_, Mutex<Connection>>,
     public_key: &str,
     new_alias: &str,
-) -> Result<Vec<WalletInfo>, String> {
+) -> Vec<Wallet> {
     let conn = conn_state.lock().unwrap();
-    let mut wallet = WalletInfo::query_by_public_key(&conn, public_key)?;
+    let repo = WalletRepository::new(&conn);
+    let mut wallet = Wallet::query_by_public_key(&repo, public_key);
     wallet.alias = Some(new_alias.to_string());
-    wallet.update(&conn);
-    WalletInfo::query_all(&conn)
+    wallet.update(&repo);
+    Wallet::query_all(&repo)
 }
 
 #[tauri::command]
 pub fn delete_wallet(
     conn_state: State<'_, Mutex<Connection>>,
     public_key: &str,
-) -> Result<Vec<WalletInfo>, String> {
+) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
-    match WalletInfo::query_by_public_key(&conn, public_key)?.del(&conn) {
-        Ok(_) => {}
-        Err(e) => return Err(e),
-    }
-
-    WalletInfo::query_all(&conn)
+    let repo = WalletRepository::new(&conn);
+    Wallet::query_by_public_key(&repo, public_key).del(&repo)
 }
 
 // 异步刷新余额
@@ -56,13 +57,14 @@ pub async fn refresh_balance(
     app: AppHandle,
 ) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
+    let repo = WalletRepository::new(&conn);
     // 用户的全部账户
-    let wallets = WalletInfo::query_all(&conn)?;
+    let wallets = Wallet::query_all(&repo);
     // 多线程刷新余额
-    let wallets = WalletInfo::refresh_wallet(wallets)?;
+    let wallets = Wallet::refresh_wallet(wallets)?;
     // 挨个更新余额变动的账户
-    wallets.iter().for_each(|x| {
-        x.update(&conn);
+    wallets.iter().for_each(|x: &Wallet| {
+        x.clone().update(&repo);
         // 通知前端某个账户更新
         app.emit(MsgType::BalanceChange.name(), x).unwrap();
         ()
@@ -78,8 +80,10 @@ pub async fn transfer(
     params: TransferParams,
 ) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
-    let wallet = WalletInfo::query_by_public_key(&conn, &params.from)?;
-    let receiving = WalletInfo::query_by_public_key(&conn, &params.to)?;
+    let repo = WalletRepository::new(&conn);
+
+    let wallet = Wallet::query_by_public_key(&repo, &params.from);
+    let receiving = Wallet::query_by_public_key(&repo, &params.to);
     let receiving_public_key = receiving.pubkey()?;
     wallet.transfer(receiving_public_key, params.amount)?;
     Ok(())
@@ -91,6 +95,7 @@ pub async fn account_history(
     public_key: &str,
 ) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
-    let wallet = WalletInfo::query_by_public_key(&conn, public_key)?;
+    let repo = WalletRepository::new(&conn);
+    let wallet = Wallet::query_by_public_key(&repo, public_key);
     wallet.history()
 }

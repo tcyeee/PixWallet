@@ -3,6 +3,7 @@
 
 mod db;
 mod models;
+mod repository;
 mod service;
 
 use db::establish_connection;

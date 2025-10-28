@@ -1,6 +1,4 @@
-use crate::models::network::SolanaNetwork;
 use bs58;
-use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::{
@@ -15,21 +13,27 @@ use std::{
     thread,
 };
 
+use crate::models::network::SolanaNetwork;
+use crate::repository::wallet_repo::WalletRepository;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct WalletInfo {
+pub struct Wallet {
     pub public_key: String,
     pub private_key: String,
     pub network: SolanaNetwork,
     pub balance: Option<u64>,
     pub alias: Option<String>,
-    pub last_update: Option<u64>,
+    pub updated_at: Option<i64>,
+    pub created_at: Option<i64>,
 }
 
-impl WalletInfo {
+impl Wallet {
     pub fn history(&self) -> Result<(), String> {
         let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
         let pubkey = &self.pubkey()?;
-        let signatures = client
+        let signatures: Vec<
+            solana_client::rpc_response::RpcConfirmedTransactionStatusWithSignature,
+        > = client
             .get_signatures_for_address_with_config(
                 pubkey,
                 GetConfirmedSignaturesForAddress2Config {
@@ -71,57 +75,25 @@ impl WalletInfo {
         Ok(())
     }
 
-    pub fn insert(&self, conn: &Connection) -> Result<(), rusqlite::Error> {
-        conn.execute(
-            "insert into wallet(public_key, private_key, network, balance, alias) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![self.public_key,self.private_key,self.network.to_string(),self.balance,self.alias],
-        )?;
+    pub fn insert(&self, repo: &WalletRepository) -> Result<(), rusqlite::Error> {
+        repo.insert(&self);
         Ok(())
     }
 
-    pub fn query_by_public_key(conn: &Connection, public_key: &str) -> Result<Self, String> {
-        conn.query_row(
-            "select public_key, private_key, network, balance, alias, last_update from wallet where public_key = ?1 limit 1",
-            params![public_key], |row|{
-                let network_str: String = row.get(2)?;
-                Ok(WalletInfo{
-                    public_key: row.get(0)?,
-                    private_key: row.get(1)?,
-                    network: SolanaNetwork::from_str(&network_str) ,
-                    balance: row.get(3)?,
-                    alias: row.get(4)?,
-                    last_update: row.get(5)?,
-                })
-            }
-        )
-        .map_err(|_| "未找到对应钱包".to_string())
+    pub fn query_by_public_key(repo: &WalletRepository, public_key: &str) -> Self {
+        repo.get_by_pub_key(public_key)
     }
 
-    pub fn del(&self, conn: &Connection) -> Result<(), String> {
+    pub fn del(&self, repo: &WalletRepository) -> Result<(), String> {
         if self.query_balance()? != 0 {
             return Err("余额不为0,禁止删除".to_string());
         }
-
-        conn.execute(
-            "DELETE FROM wallet WHERE public_key = ?1",
-            params![&self.public_key],
-        )
-        .map(|_| ())
-        .map_err(|_| "删除失败".to_string())
+        repo.del(&self.public_key);
+        Ok(())
     }
 
-    pub fn update(&self, conn: &Connection) {
-        let info = conn
-            .execute(
-                "update wallet set alias = ?1, balance = ?2 where public_key = ?3",
-                params![self.alias, self.balance, self.public_key],
-            )
-            .map_err(|_| "更新出错".to_string());
-
-        match info {
-            Ok(_) => (),
-            Err(e) => println!("{}", e),
-        }
+    pub fn update(self, repo: &WalletRepository) {
+        repo.update(self);
     }
 
     pub fn pubkey(&self) -> Result<Pubkey, String> {
@@ -142,10 +114,9 @@ impl WalletInfo {
         Ok(balance)
     }
 
-    pub fn new(conn: &Connection, network: Option<SolanaNetwork>) -> Result<Self, String> {
+    pub fn new(repo: &WalletRepository, network: Option<SolanaNetwork>) -> Result<Self, String> {
         // 读取已有钱包,如果已经有5个,则不允许创建新钱包
-        let existing_wallets: Vec<WalletInfo> =
-            Self::query_all(&conn).map_err(|e| e.to_string())?;
+        let existing_wallets: Vec<Wallet> = repo.all();
 
         if existing_wallets.len() >= 5 {
             return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
@@ -161,54 +132,27 @@ impl WalletInfo {
         // 初始化 RPC 客户端（将来用于查询余额等操作）
         let _client: RpcClient = SolanaNetwork::get_rpc_client(network);
 
-        let wallet_info: WalletInfo = WalletInfo {
+        let wallet_info: Wallet = Wallet {
             public_key,
             private_key,
             network,
             balance: Some(0), // 新创建的钱包余额为 0
             alias: None,      // 初始没有别名
-            last_update: Some(0),
+            updated_at: Some(0),
+            created_at: Some(0),
         };
         Ok(wallet_info)
     }
 
-    pub fn query_all(conn: &Connection) -> Result<Vec<Self>, String> {
-        let mut stmt = conn
-            .prepare(
-                "
-            select public_key, private_key, network, balance, alias, last_update
-            from wallet
-            limit 10
-        ",
-            )
-            .map_err(|e| e.to_string())?;
-
-        let rows = stmt
-            .query_map([], |row| {
-                let network_str: String = row.get(2)?;
-                Ok(WalletInfo {
-                    public_key: row.get(0)?,
-                    private_key: row.get(1)?,
-                    network: SolanaNetwork::from_str(&network_str),
-                    balance: row.get(3)?,
-                    alias: row.get(4)?,
-                    last_update: row.get(5)?,
-                })
-            })
-            .map_err(|e| e.to_string())?;
-
-        let wallets: Vec<WalletInfo> = rows
-            .map(|r| r.map_err(|e| e.to_string()))
-            .collect::<Result<_, _>>()?;
-
-        Ok(wallets)
+    pub fn query_all(repo: &WalletRepository) -> Vec<Self> {
+        repo.all()
     }
 
     /**
      * 异步查询钱包余额
      * 查询完成以后,将会返回所有有变动的钱包信息
      */
-    pub fn refresh_wallet(wallets: Vec<WalletInfo>) -> Result<Vec<WalletInfo>, String> {
+    pub fn refresh_wallet(wallets: Vec<Wallet>) -> Result<Vec<Wallet>, String> {
         let results = Arc::new(Mutex::new(Vec::new()));
 
         let handles: Vec<_> = wallets
