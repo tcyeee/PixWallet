@@ -25,30 +25,18 @@ pub struct WalletInfo {
 }
 
 impl WalletInfo {
-    pub fn transfer(&self, recipient: Pubkey, amount: u64) -> Result<(), String> {
+    pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
+        println!("==================[START]==================");
         let connection: RpcClient = SolanaNetwork::get_rpc_client(self.network);
         let sender: Keypair = self.keypair();
-        let transfer_amount = amount / LAMPORTS_PER_SOL; // 0.01 SOL
+        let transfer_amount = (amount * LAMPORTS_PER_SOL as f32) as u64;
 
-        // Check balance before transfer
-        let pre_balance1 = connection
-            .get_balance(&sender.pubkey())
-            .map_err(|e| e.to_string())?;
-
-        let pre_balance2 = connection
-            .get_balance(&recipient)
-            .map_err(|e| e.to_string())?;
-
-        // Create a transfer instruction for transferring SOL from sender to recipient
         let transfer_instruction = transfer(&sender.pubkey(), &recipient, transfer_amount);
-
-        // Add the transfer instruction to a new transaction
         let mut transaction =
             Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
         let blockhash = connection
             .get_latest_blockhash()
             .map_err(|e| e.to_string())?;
-
         transaction.sign(&[&sender], blockhash);
 
         // Send the transaction to the network
@@ -56,33 +44,9 @@ impl WalletInfo {
             .send_and_confirm_transaction(&transaction)
             .map_err(|e| e.to_string())?;
 
-        // Check balance after transfer
-        let post_balance1 = connection
-            .get_balance(&sender.pubkey())
-            .map_err(|e| e.to_string())?;
-
-        let post_balance2 = connection
-            .get_balance(&recipient)
-            .map_err(|e| e.to_string())?;
-
-        println!(
-            "Sender prebalance: {}",
-            pre_balance1 as f64 / LAMPORTS_PER_SOL as f64
-        );
-        println!(
-            "Recipient prebalance: {}",
-            pre_balance2 as f64 / LAMPORTS_PER_SOL as f64
-        );
-        println!(
-            "Sender postbalance: {}",
-            post_balance1 as f64 / LAMPORTS_PER_SOL as f64
-        );
-        println!(
-            "Recipient postbalance: {}",
-            post_balance2 as f64 / LAMPORTS_PER_SOL as f64
-        );
+        println!("=================");
         println!("Transaction Signature: {}", transaction_signature);
-
+        println!("==================[END]==================");
         Ok(())
     }
 
@@ -144,8 +108,9 @@ impl WalletInfo {
             .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))
     }
 
+    /* 通过私钥, 获取用于转账的密钥对 */
     pub fn keypair(&self) -> Keypair {
-        Keypair::from_base58_string(&self.public_key)
+        Keypair::from_base58_string(&self.private_key)
     }
 
     pub fn query_balance(&self) -> Result<u64, String> {

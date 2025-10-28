@@ -79,8 +79,8 @@ pub async fn transfer(
     params: TransferParams,
 ) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
-    let wallet = WalletInfo::query_by_public_key(&conn, &params.paying)?;
-    let receiving = WalletInfo::query_by_public_key(&conn, &params.receiving)?;
+    let wallet = WalletInfo::query_by_public_key(&conn, &params.from)?;
+    let receiving = WalletInfo::query_by_public_key(&conn, &params.to)?;
     let receiving_public_key = receiving.pubkey()?;
     wallet.transfer(receiving_public_key, params.amount)?;
     Ok(())

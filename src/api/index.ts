@@ -1,5 +1,5 @@
 import { requery } from "./requery";
-import { WalletInfo } from "@/models"
+import { TransferParams, WalletInfo } from "@/models"
 import { InvokeArgs } from "@tauri-apps/api/core";
 
 export default {
@@ -8,5 +8,5 @@ export default {
     WalletBalanceRefresh: () => requery<null>("refresh_balance"),
     WalletAliasUpdate: (args?: InvokeArgs) => requery<Array<WalletInfo>>("change_alias", args),
     WalletDel: (args?: InvokeArgs) => requery<Array<WalletInfo>>("delete_wallet", args),
-    Transfer: (args?: InvokeArgs) => requery<null>("transfer", args),
+    Transfer: (args?: TransferParams) => requery<null>("transfer", { params: args }),
 }

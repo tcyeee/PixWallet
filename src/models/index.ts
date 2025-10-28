@@ -26,7 +26,7 @@ export type NetworkStatus = {
 }
 
 export type TransferParams = {
-    paying: string,
-    receiving: string,
+    from: string,
+    to: string,
     amount: number,
 }
