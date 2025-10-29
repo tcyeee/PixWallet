@@ -30,3 +30,20 @@ export type TransferParams = {
     to: string,
     amount: number,
 }
+
+export type AccountHistory = {
+    public_key: string;
+    signature: string;
+    slot: number;
+    err?: string;
+    memo?: string;
+    block_time?: number;
+    confirmation_status?: Status;
+    remark?: string;
+    created_at: number;
+}
+export enum Status {
+    PROCESSED = "Processed",
+    CONFIRMED = "Confirmed",
+    FINALIZED = "Finalized",
+}

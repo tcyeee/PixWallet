@@ -1,5 +1,5 @@
 import { requery } from "./requery";
-import { TransferParams, WalletInfo } from "@/models"
+import { AccountHistory, TransferParams, WalletInfo } from "@/models"
 import { InvokeArgs } from "@tauri-apps/api/core";
 
 export default {
@@ -10,5 +10,5 @@ export default {
     WalletAliasUpdate: (args?: InvokeArgs) => requery<Array<WalletInfo>>("change_alias", args),
     WalletDel: (args?: InvokeArgs) => requery<Array<WalletInfo>>("delete_wallet", args),
     Transfer: (args?: TransferParams) => requery<null>("transfer", { params: args }),
-    WalletHistory: (arg: string) => requery<null>("account_history", { publicKey: arg }),
+    WalletHistory: (arg: string) => requery<Array<AccountHistory>>("account_history", { publicKey: arg }),
 }

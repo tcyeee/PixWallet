@@ -30,14 +30,35 @@
 
   <hr class="my-5" />
 
-  <div>{{ list }}</div>
-
+  <div class="overflow-x-auto">
+    <table class="table table-xs">
+      <thead>
+        <tr>
+          <th>SIGNATURE</th>
+          <th>SLOT</th>
+          <th>BLOCK TIME</th>
+          <th>STATUS</th>
+          <th>REMARK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in list" :key="item.signature">
+          <th>{{ item.signature }}</th>
+          <th>{{ item.slot }}</th>
+          <th>{{ item.block_time }}</th>
+          <th>{{ item.confirmation_status }}</th>
+          <th>{{ item.remark || 'None'}}</th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
 import NAV from "@/router";
+import { AccountHistory } from "@/models";
 
 const route = useRoute();
 const walletInfo = route.query;
@@ -46,7 +67,7 @@ onMounted(() => {
   dataInit();
 });
 
-var list = ref([]);
+var list = ref<AccountHistory[]>([]);
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
   API.WalletHistory(String(walletInfo.public_key)).then((res) => {
