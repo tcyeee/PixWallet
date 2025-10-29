@@ -30,7 +30,7 @@ impl HistoryRepository {
         for history in list {
             tx.execute(
                 "
-                INSERT INTOhistory (
+                INSERT INTO history (
                     public_key,
                     signature,
                     slot,

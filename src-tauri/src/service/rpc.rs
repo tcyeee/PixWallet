@@ -25,31 +25,29 @@ pub fn history_update(
         )
         .map_err(|e| e.to_string())?;
 
-    // 找到最新的时间
+    if signatures.is_empty() {
+        return Ok(());
+    };
+
+    // 计算数据库中,最近的Block时间(可能为空)
+    let mut last_block_time: i64 = 0_i64;
     if !history_list.is_empty() {
-        let first = match history_list.get(0) {
-            Some(item) => item,
-            None => return Ok(()),
+        last_block_time = match history_list.get(0) {
+            Some(item) => item.block_time.unwrap_or(0),
+            None => 0_i64,
         };
+    }
 
-        // 同时signatures也要有值
-        if signatures.is_empty() {
-            return Ok(());
-        };
-
-        let mut new_history: Vec<History> = Vec::new();
-        for sig in signatures {
-            if sig.block_time > first.block_time {
-                let history = History::parse_from_signature(sig, &first.public_key)?;
-                new_history.push(history);
-            }
+    let mut new_history: Vec<History> = Vec::new();
+    for sig in signatures {
+        let current_block_time = sig.block_time.unwrap_or(0_i64);
+        if current_block_time > last_block_time {
+            let history = History::parse_from_signature(sig, &public_key)?;
+            new_history.push(history);
         }
+    }
 
-        if new_history.is_empty() {
-            return Ok(());
-        }
-
-        // 批量添加
+    if !new_history.is_empty() {
         let repo = HistoryRepository::new();
         repo.insert_batch(new_history)?;
     }

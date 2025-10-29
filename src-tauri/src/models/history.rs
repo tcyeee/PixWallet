@@ -52,8 +52,15 @@ impl History {
         sign: RpcConfirmedTransactionStatusWithSignature,
         public_key: &str,
     ) -> Result<Self, String> {
-        let status_str = format!("{:?}", sign.confirmation_status);
-        let status = Status::from_str(&status_str)?;
+        let confirmation_status = sign.confirmation_status.map(|s| {
+            let s_str = format!("{:?}", s);
+            match s_str.as_str() {
+                "Processed" => Status::Processed,
+                "Confirmed" => Status::Confirmed,
+                "Finalized" => Status::Finalized,
+                _ => Status::Processed,
+            }
+        });
         let history = History {
             public_key: public_key.to_string(),
             signature: sign.signature,
@@ -61,7 +68,7 @@ impl History {
             err: sign.err.map(|e| format!("{:?}", e)),
             memo: sign.memo,
             block_time: sign.block_time,
-            confirmation_status: Some(status),
+            confirmation_status: confirmation_status,
             remark: None,
             created_at: Utc::now().timestamp_millis(),
         };
