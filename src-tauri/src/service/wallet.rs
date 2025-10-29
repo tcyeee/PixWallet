@@ -6,7 +6,7 @@ use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::notice;
 use crate::service::notice::MsgType;
 use crate::service::rpc::history_update;
-use {rusqlite::Connection, std::sync::Arc, std::sync::Mutex, tauri::State, tokio::task};
+use {rusqlite::Connection, std::sync::Mutex, tauri::State};
 
 #[tauri::command]
 pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Vec<Wallet> {
@@ -95,25 +95,16 @@ pub async fn transfer(
  * 将更新数据存储到数据库,同时异步通知到前端.
  */
 #[tauri::command]
-pub async fn account_history(
-    conn_state: State<'_, Arc<Mutex<Connection>>>,
+pub fn account_history(
+    conn_state: State<'_, Mutex<Connection>>,
     public_key: String,
 ) -> Result<Vec<History>, String> {
-    // 拿到本地历史
-    let conn_state = conn_state.inner().clone();
-    let public_key_clone = public_key.clone();
-    let last_list = task::spawn_blocking(move || -> Result<Vec<History>, String> {
-        let conn = conn_state
-            .lock()
-            .map_err(|e| format!("锁数据库失败: {}", e))?;
-        let repo = HistoryRepository::new(&conn);
-        Ok(repo.list(&public_key_clone))
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+    let conn = conn_state.lock().unwrap();
+    let repo = HistoryRepository::new(&conn);
+    let list = repo.list(&public_key);
 
     // 查询线上历史
-    history_update(&last_list, public_key, SolanaNetwork::Devnet).await;
+    history_update(&list, &public_key, SolanaNetwork::Devnet);
 
-    Ok(last_list)
+    Ok(list)
 }

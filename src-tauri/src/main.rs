@@ -6,9 +6,7 @@ mod models;
 mod repository;
 mod service;
 
-use db::establish_connection;
-
-use crate::service::notice::APP_HANDLE;
+use crate::{db::connection::establish_connection, service::notice::APP_HANDLE};
 
 #[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
