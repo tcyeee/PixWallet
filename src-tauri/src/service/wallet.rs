@@ -74,11 +74,18 @@ pub async fn transfer(params: TransferParams) -> Result<(), String> {
  * 将更新数据存储到数据库,同时异步通知到前端.
  */
 #[tauri::command]
-pub fn account_history(public_key: String) -> Result<Vec<History>, String> {
+pub async fn account_history(public_key: String) -> Result<Vec<History>, String> {
     let repo = HistoryRepository::new();
     let list = repo.list(&public_key);
+    let list_clone = list.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        match history_update(&list_clone, &public_key, SolanaNetwork::Devnet) {
+            Ok(()) => {}
+            Err(e) => {
+                eprintln!("{}", e)
+            }
+        };
+    });
 
-    // 查询线上历史
-    history_update(&list, &public_key, SolanaNetwork::Devnet)?;
     Ok(list)
 }

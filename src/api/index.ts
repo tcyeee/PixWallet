@@ -3,6 +3,7 @@ import { TransferParams, WalletInfo } from "@/models"
 import { InvokeArgs } from "@tauri-apps/api/core";
 
 export default {
+    Hello: () => requery<string>("hello"),
     WalletList: () => requery<WalletInfo[]>("query_wallet"),
     WalletCreate: () => requery<WalletInfo>("create_wallet"),
     WalletBalanceRefresh: () => requery<null>("refresh_balance"),

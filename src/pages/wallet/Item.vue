@@ -30,6 +30,8 @@
 
   <hr class="my-5" />
 
+  <div>{{ list }}</div>
+
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
@@ -41,13 +43,16 @@ const route = useRoute();
 const walletInfo = route.query;
 
 onMounted(() => {
-  // 获取账户信息
   dataInit();
 });
 
+var list = ref([]);
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
-  API.WalletHistory(String(walletInfo.public_key));
+  API.WalletHistory(String(walletInfo.public_key)).then((res) => {
+    console.log(res);
+    list.value = res || [];
+  });
 }
 
 const alias = ref("");

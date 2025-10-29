@@ -4,6 +4,7 @@ pub static APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
 #[derive(Debug)]
 pub enum MsgType {
+    _Error,
     Ping,
     BalanceRefreshEnd,
     BalanceChange,
@@ -12,6 +13,7 @@ pub enum MsgType {
 impl MsgType {
     pub fn name(&self) -> &'static str {
         match self {
+            MsgType::_Error => "ERROR",
             MsgType::Ping => "PING",
             MsgType::BalanceRefreshEnd => "BALANCE_REFRESH_END",
             MsgType::BalanceChange => "BALANCE_CHANGE",
