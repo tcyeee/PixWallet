@@ -31,21 +31,23 @@
   <hr class="my-5" />
 
   <div class="overflow-x-auto">
-    <table class="table table-xs">
+    <table class="table table-xs table-fixed">
       <thead>
         <tr>
-          <th>SIGNATURE</th>
-          <th>SLOT</th>
-          <th>BLOCK TIME</th>
-          <th>STATUS</th>
-          <th>REMARK</th>
+          <th class="w-8"></th>
+          <th class="truncate min-w-64">SIGNATURE</th>
+          <th class="w-20">SLOT</th>
+          <th class="w-40">BLOCK TIME</th>
+          <th class="w-20">STATUS</th>
+          <th class="w-20">REMARK</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in list" :key="item.signature">
-          <th>{{ item.signature }}</th>
+        <tr v-for="(item,index) in list" :key="item.signature">
+          <th>{{ index+1 }}</th>
+          <th class="truncate text-gray-500">{{ item.signature }}</th>
           <th>{{ item.slot }}</th>
-          <th>{{ item.block_time }}</th>
+          <th>{{ formatTimestamp(item.block_time!) }}</th>
           <th>{{ item.confirmation_status }}</th>
           <th>{{ item.remark || 'None'}}</th>
         </tr>
@@ -59,6 +61,7 @@ import API from "@/api";
 import { useRoute } from "vue-router";
 import NAV from "@/router";
 import { AccountHistory } from "@/models";
+import { formatTimestamp } from "@/utils/common";
 
 const route = useRoute();
 const walletInfo = route.query;
