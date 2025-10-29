@@ -1,20 +1,31 @@
-use std::str::FromStr;
+use std::{
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 
-use crate::models::history::{History, Status};
+use crate::{
+    db::connection::DB_CONN,
+    models::history::{History, Status},
+};
 use rusqlite::Connection;
 
-pub struct HistoryRepository<'a> {
-    conn: &'a Connection,
+pub struct HistoryRepository {
+    conn: Arc<Mutex<Connection>>,
 }
 
-impl<'a> HistoryRepository<'a> {
-    pub fn new(conn: &'a Connection) -> Self {
+impl HistoryRepository {
+    pub fn new() -> Self {
+        let conn = DB_CONN.get().expect("数据库未初始化").clone(); // 拿到 Arc<Mutex<Connection>>
         Self { conn }
     }
 
+    fn get_conn(&'_ self) -> std::sync::MutexGuard<'_, Connection> {
+        self.conn.lock().expect("锁数据库失败")
+    }
+
     pub fn list(&self, public_key: &str) -> Vec<History> {
-        let mut stmt = self
-            .conn
+        let conn = self.get_conn();
+        let mut stmt = conn
             .prepare(
                 "
                 SELECT

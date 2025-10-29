@@ -6,36 +6,24 @@ use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::notice;
 use crate::service::notice::MsgType;
 use crate::service::rpc::history_update;
-use {rusqlite::Connection, std::sync::Mutex, tauri::State};
 
 #[tauri::command]
-pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Vec<Wallet> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
+pub fn query_wallet() -> Vec<Wallet> {
+    let repo = WalletRepository::new();
     Wallet::query_all(&repo)
 }
 
 #[tauri::command]
-pub fn create_wallet(
-    conn_state: State<'_, Mutex<Connection>>,
-    network: Option<SolanaNetwork>,
-) -> Result<Wallet, String> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
-
+pub fn create_wallet(network: Option<SolanaNetwork>) -> Result<Wallet, String> {
+    let repo = WalletRepository::new();
     let wallet = Wallet::new(&repo, network)?;
     wallet.insert(&repo).map_err(|e| e.to_string())?;
     Ok(wallet)
 }
 
 #[tauri::command]
-pub fn change_alias(
-    conn_state: State<'_, Mutex<Connection>>,
-    public_key: &str,
-    new_alias: &str,
-) -> Vec<Wallet> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
+pub fn change_alias(public_key: &str, new_alias: &str) -> Vec<Wallet> {
+    let repo = WalletRepository::new();
     let mut wallet = Wallet::query_by_public_key(&repo, public_key);
     wallet.alias = Some(new_alias.to_string());
     wallet.update(&repo);
@@ -43,20 +31,15 @@ pub fn change_alias(
 }
 
 #[tauri::command]
-pub fn delete_wallet(
-    conn_state: State<'_, Mutex<Connection>>,
-    public_key: &str,
-) -> Result<(), String> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
+pub fn delete_wallet(public_key: &str) -> Result<(), String> {
+    let repo = WalletRepository::new();
     Wallet::query_by_public_key(&repo, public_key).del(&repo)
 }
 
 // 异步刷新余额
 #[tauri::command]
-pub async fn refresh_balance(conn_state: State<'_, Mutex<Connection>>) -> Result<(), String> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
+pub async fn refresh_balance() -> Result<(), String> {
+    let repo = WalletRepository::new();
     // 用户的全部账户
     let wallets = Wallet::query_all(&repo);
     // 多线程刷新余额
@@ -71,12 +54,8 @@ pub async fn refresh_balance(conn_state: State<'_, Mutex<Connection>>) -> Result
 }
 
 #[tauri::command]
-pub async fn transfer(
-    conn_state: State<'_, Mutex<Connection>>,
-    params: TransferParams,
-) -> Result<(), String> {
-    let conn = conn_state.lock().unwrap();
-    let repo = WalletRepository::new(&conn);
+pub async fn transfer(params: TransferParams) -> Result<(), String> {
+    let repo = WalletRepository::new();
 
     let wallet = Wallet::query_by_public_key(&repo, &params.from);
     let receiving = Wallet::query_by_public_key(&repo, &params.to);
@@ -95,12 +74,8 @@ pub async fn transfer(
  * 将更新数据存储到数据库,同时异步通知到前端.
  */
 #[tauri::command]
-pub fn account_history(
-    conn_state: State<'_, Mutex<Connection>>,
-    public_key: String,
-) -> Result<Vec<History>, String> {
-    let conn = conn_state.lock().unwrap();
-    let repo = HistoryRepository::new(&conn);
+pub fn account_history(public_key: String) -> Result<Vec<History>, String> {
+    let repo = HistoryRepository::new();
     let list = repo.list(&public_key);
 
     // 查询线上历史

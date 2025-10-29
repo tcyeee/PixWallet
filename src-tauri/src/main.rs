@@ -11,11 +11,10 @@ use crate::{db::connection::establish_connection, service::notice::APP_HANDLE};
 #[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 async fn main() {
-    let conn_state = establish_connection().expect("Failed to connect to database");
+    establish_connection();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(conn_state)
         .invoke_handler(tauri::generate_handler![
             service::greet::say,
             service::wallet::create_wallet,
