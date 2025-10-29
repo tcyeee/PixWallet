@@ -3,8 +3,8 @@ use crate::models::{
 };
 use crate::repository::history_repo::HistoryRepository;
 use crate::repository::wallet_repo::WalletRepository;
-use crate::service::notice::msg;
 use crate::service::notice::MsgType;
+use crate::service::notice::{msg, show, NoticeType};
 use crate::service::rpc::history_update;
 
 #[tauri::command]
@@ -80,8 +80,9 @@ pub async fn account_history(public_key: String) -> Result<Vec<History>, String>
     let list_clone = list.clone();
     tauri::async_runtime::spawn_blocking(move || {
         match history_update(&list_clone, &public_key, SolanaNetwork::Devnet) {
-            Ok(()) => {}
+            Ok(()) => show(NoticeType::Success, "同步完成"),
             Err(e) => {
+                show(NoticeType::Error, &format!("网络同步失败:{}", e));
                 eprintln!("{}", e)
             }
         };

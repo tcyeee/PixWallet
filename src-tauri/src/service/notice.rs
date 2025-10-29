@@ -34,17 +34,19 @@ pub fn msg<S: Serialize + Clone>(msg_type: MsgType, msg: S) {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum NoticeType {
+    Info,
     Success,
-    _Warning,
-    _Error,
+    Warning,
+    Error,
 }
 
 impl NoticeType {
     pub fn name(&self) -> &'static str {
         match self {
+            NoticeType::Info => "INFO",
             NoticeType::Success => "SUCCESS",
-            NoticeType::_Warning => "WARNING",
-            NoticeType::_Error => "ERROR",
+            NoticeType::Warning => "WARNING",
+            NoticeType::Error => "ERROR",
         }
     }
 }
@@ -55,10 +57,10 @@ struct ShowParams {
     content: String,
 }
 
-pub fn show(notice_type: NoticeType, info: &str) {
+pub fn show(notice_type: NoticeType, content: &str) {
     let params = ShowParams {
         level: notice_type.name().to_string(),
-        content: info.to_string(),
+        content: content.to_string(),
     };
 
     if let Some(app) = APP_HANDLE.get() {

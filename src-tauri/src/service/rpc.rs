@@ -11,11 +11,10 @@ pub fn history_update(
     public_key: &str,
     network: SolanaNetwork,
 ) -> Result<(), String> {
+    show(NoticeType::Info, "正在同步Solana网络...");
+
     let client: RpcClient = SolanaNetwork::get_rpc_client(network);
     let pubkey: Pubkey = get_public_key_by_str(&public_key)?;
-
-    show(NoticeType::Success, "你好👋");
-
     let signatures = client
         .get_signatures_for_address_with_config(
             &pubkey,

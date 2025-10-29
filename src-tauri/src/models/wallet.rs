@@ -1,5 +1,5 @@
 use crate::repository::wallet_repo::WalletRepository;
-use crate::service::notice::MsgType;
+use crate::service::notice::{show, MsgType, NoticeType};
 use crate::{models::network::SolanaNetwork, service::notice::msg};
 use {
     bs58,
@@ -138,9 +138,18 @@ impl Wallet {
             .map(|wallet| {
                 let results = Arc::clone(&results);
                 thread::spawn(move || {
-                    println!("[DEBUG] 正在查询账户: {}", wallet.public_key);
                     let balance = wallet.query_balance().unwrap_or_default();
-                    println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
+
+                    {
+                        println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
+                        let name = wallet
+                            .alias
+                            .clone()
+                            .unwrap_or(format!("{}...", &wallet.public_key[0..10]));
+                        let content = format!("账户{:?}更新完成..", name);
+                        show(NoticeType::Success, &content);
+                    }
+
                     if wallet.balance != Some(balance) {
                         let mut w = wallet;
                         w.balance = Some(balance);
