@@ -79,7 +79,6 @@ pub fn account_history(public_key: String) -> Result<Vec<History>, String> {
     let list = repo.list(&public_key);
 
     // 查询线上历史
-    history_update(&list, &public_key, SolanaNetwork::Devnet);
-
+    history_update(&list, &public_key, SolanaNetwork::Devnet)?;
     Ok(list)
 }

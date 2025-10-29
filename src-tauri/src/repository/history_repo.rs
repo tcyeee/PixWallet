@@ -7,7 +7,7 @@ use crate::{
     db::connection::DB_CONN,
     models::history::{History, Status},
 };
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 
 pub struct HistoryRepository {
     conn: Arc<Mutex<Connection>>,
@@ -21,6 +21,43 @@ impl HistoryRepository {
 
     fn get_conn(&'_ self) -> std::sync::MutexGuard<'_, Connection> {
         self.conn.lock().expect("锁数据库失败")
+    }
+
+    pub fn insert_batch(&self, list: Vec<History>) -> Result<(), String> {
+        let mut conn = self.get_conn();
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+        for history in list {
+            tx.execute(
+                "
+                INSERT INTOhistory (
+                    public_key,
+                    signature,
+                    slot,
+                    err,
+                    memo,
+                    block_time,
+                    confirmation_status,
+                    remark
+                )
+                VALUES
+                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                ",
+                params![
+                    history.public_key,
+                    history.signature,
+                    history.slot,
+                    history.err,
+                    history.memo,
+                    history.block_time,
+                    history.confirmation_status.map(|x| x.to_string()),
+                    history.remark,
+                ],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(())
     }
 
     pub fn list(&self, public_key: &str) -> Vec<History> {
