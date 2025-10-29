@@ -1,17 +1,12 @@
 use crate::models::{
-    dto::TransferParams, history::History, message_type::MsgType, network::SolanaNetwork,
-    wallet::Wallet,
+    dto::TransferParams, history::History, network::SolanaNetwork, wallet::Wallet,
 };
 use crate::repository::history_repo::HistoryRepository;
 use crate::repository::wallet_repo::WalletRepository;
+use crate::service::notice::notice;
+use crate::service::notice::MsgType;
 use crate::service::rpc::history_update;
-use {
-    rusqlite::Connection,
-    std::sync::Arc,
-    std::sync::Mutex,
-    tauri::{AppHandle, Emitter, State},
-    tokio::task,
-};
+use {rusqlite::Connection, std::sync::Arc, std::sync::Mutex, tauri::State, tokio::task};
 
 #[tauri::command]
 pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Vec<Wallet> {
@@ -59,25 +54,19 @@ pub fn delete_wallet(
 
 // 异步刷新余额
 #[tauri::command]
-pub async fn refresh_balance(
-    conn_state: State<'_, Mutex<Connection>>,
-    app: AppHandle,
-) -> Result<(), String> {
+pub async fn refresh_balance(conn_state: State<'_, Mutex<Connection>>) -> Result<(), String> {
     let conn = conn_state.lock().unwrap();
     let repo = WalletRepository::new(&conn);
     // 用户的全部账户
     let wallets = Wallet::query_all(&repo);
     // 多线程刷新余额
     let wallets = Wallet::refresh_wallet(wallets)?;
+
     // 挨个更新余额变动的账户
-    wallets.iter().for_each(|x: &Wallet| {
-        x.clone().update(&repo);
-        // 通知前端某个账户更新
-        app.emit(MsgType::BalanceChange.name(), x).unwrap();
-        ()
-    });
-    // 通知前端所有的查询均已结束
-    app.emit(MsgType::BalanceRefreshEnd.name(), ()).unwrap();
+    wallets
+        .iter()
+        .for_each(|x: &Wallet| x.clone().update(&repo));
+    notice(MsgType::BalanceRefreshEnd, ());
     Ok(())
 }
 

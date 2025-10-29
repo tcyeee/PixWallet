@@ -29,8 +29,7 @@ async fn main() {
             service::wallet::account_history,
         ])
         .setup(|app| {
-            let app_handle = app.handle();
-            APP_HANDLE.set(app_handle.clone()).unwrap();
+            APP_HANDLE.set(app.handle().clone()).unwrap();
             // PING
             service::network_monitor::start_monitor();
             Ok(())

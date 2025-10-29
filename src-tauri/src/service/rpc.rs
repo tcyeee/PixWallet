@@ -1,4 +1,4 @@
-use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
+use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::models::{history::History, network::SolanaNetwork};
@@ -11,7 +11,7 @@ pub async fn history_update(
     let _client: RpcClient = SolanaNetwork::get_rpc_client(network);
     let _pubkey: Pubkey = match get_public_key_by_str(&public_key) {
         Ok(pk) => pk,
-        Err(e) => {
+        Err(_) => {
             // 出错时通知前端
             // notify_frontend(e);
             return ();

@@ -1,9 +1,10 @@
-use crate::models::{history::History, network::SolanaNetwork};
 use crate::repository::wallet_repo::WalletRepository;
+use crate::service::notice::MsgType;
+use crate::{models::network::SolanaNetwork, service::notice::notice};
 use {
     bs58,
     serde::{Deserialize, Serialize},
-    solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient},
+    solana_client::rpc_client::RpcClient,
     solana_sdk::{
         native_token::LAMPORTS_PER_SOL,
         pubkey::Pubkey,
@@ -143,6 +144,7 @@ impl Wallet {
                     if wallet.balance != Some(balance) {
                         let mut w = wallet;
                         w.balance = Some(balance);
+                        notice(MsgType::BalanceChange, &w);
                         results.lock().unwrap().push(w);
                     }
                 })

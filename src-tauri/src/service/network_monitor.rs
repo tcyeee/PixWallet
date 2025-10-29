@@ -1,8 +1,7 @@
-use crate::models::{message_type::MsgType, network::SolanaNetwork};
-use crate::service::notice::APP_HANDLE;
+use crate::models::network::SolanaNetwork;
+use crate::service::notice::{notice, MsgType};
 use solana_client::rpc_client::RpcClient;
 use std::time::Instant;
-use tauri::Emitter;
 use tokio::time::timeout;
 use tokio::time::{sleep, Duration};
 
@@ -56,21 +55,17 @@ pub async fn check(client: &RpcClient) {
         Ok(health) => match health {
             Ok(_) => {
                 if elapsed <= 1000 {
-                    send(NetworkStatus::Good(elapsed));
+                    sends(NetworkStatus::Good(elapsed));
                 } else {
-                    send(NetworkStatus::Poor(elapsed));
+                    sends(NetworkStatus::Poor(elapsed));
                 }
             }
-            Err(_) => send(NetworkStatus::Lost(elapsed)),
+            Err(_) => sends(NetworkStatus::Lost(elapsed)),
         },
-        Err(_) => send(NetworkStatus::Lost(9999)),
+        Err(_) => sends(NetworkStatus::Lost(9999)),
     }
 }
 
-fn send(status: NetworkStatus) {
-    if let Some(app) = APP_HANDLE.get() {
-        app.emit(MsgType::Ping.name(), status.assemble())
-            .inspect_err(|e| eprintln!("[NETWORK_CHECK] Failed to emit 'PING': {}", e))
-            .ok();
-    }
+fn sends(status: NetworkStatus) {
+    notice(MsgType::Ping, status.assemble());
 }
