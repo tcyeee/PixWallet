@@ -16,7 +16,6 @@ async fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            service::greet::say,
             service::wallet::create_wallet,
             service::wallet::query_wallet,
             service::wallet::change_alias,
