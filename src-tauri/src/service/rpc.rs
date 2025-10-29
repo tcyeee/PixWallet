@@ -1,6 +1,7 @@
 use crate::{
     models::{history::History, network::SolanaNetwork},
     repository::history_repo::HistoryRepository,
+    service::notice::{show, NoticeType},
 };
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::pubkey::Pubkey;
@@ -12,6 +13,8 @@ pub fn history_update(
 ) -> Result<(), String> {
     let client: RpcClient = SolanaNetwork::get_rpc_client(network);
     let pubkey: Pubkey = get_public_key_by_str(&public_key)?;
+
+    show(NoticeType::Success, "你好👋");
 
     let signatures = client
         .get_signatures_for_address_with_config(

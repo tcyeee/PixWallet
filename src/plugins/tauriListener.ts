@@ -1,8 +1,9 @@
 import { listen } from '@tauri-apps/api/event'
-import { MsgType, NetworkStatus, WalletInfo } from "@/models";
+import { MsgType, NetworkStatus, NoticeEnum, NoticeParams, WalletInfo } from "@/models";
 import { useUserStore } from '@/stores/user';
 import { Pinia } from 'pinia';
-
+import { notify } from "@/utils/notify";
+import { alert } from '@/utils/alert';
 
 export async function setupTauriListener(pinia: Pinia) {
     const userStore = useUserStore(pinia)
@@ -13,10 +14,21 @@ export async function setupTauriListener(pinia: Pinia) {
     /* 某个钱包余额发生变化 */
     listen<WalletInfo>(MsgType.BALANCE_CHANGE, (event) => userStore.updateWallet(event.payload));
 
-    /* TODO 监听后端通知 */
-    await listen('msg', (event) => {
-        console.log("===========");
-        console.log(event);
-        console.log("===========");
+    /* 监听后端通知 */
+    await listen(MsgType.NOTICE, (event) => {
+        let param = event.payload as NoticeParams;
+        if (param.level == NoticeEnum.INFO) notify.info(param.content)
+        if (param.level == NoticeEnum.SUCCESS) notify.success(param.content)
+        if (param.level == NoticeEnum.WARNING) notify.warning(param.content)
+        if (param.level == NoticeEnum.ERROR) notify.error(param.content)
+    })
+
+    /* 监听后端警告 */
+    await listen(MsgType.ALERT, (event) => {
+        let param = event.payload as NoticeParams;
+        if (param.level == NoticeEnum.INFO) alert.info(param.content)
+        if (param.level == NoticeEnum.SUCCESS) alert.success(param.content)
+        if (param.level == NoticeEnum.WARNING) alert.warning(param.content)
+        if (param.level == NoticeEnum.ERROR) alert.error(param.content)
     })
 }

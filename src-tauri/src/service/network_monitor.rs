@@ -1,5 +1,5 @@
 use crate::models::network::SolanaNetwork;
-use crate::service::notice::{notice, MsgType};
+use crate::service::notice::{msg, MsgType};
 use solana_client::rpc_client::RpcClient;
 use std::time::Instant;
 use tokio::time::timeout;
@@ -67,5 +67,5 @@ pub async fn check(client: &RpcClient) {
 }
 
 fn sends(status: NetworkStatus) {
-    notice(MsgType::Ping, status.assemble());
+    msg(MsgType::Ping, status.assemble());
 }

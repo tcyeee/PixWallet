@@ -3,7 +3,7 @@ use crate::models::{
 };
 use crate::repository::history_repo::HistoryRepository;
 use crate::repository::wallet_repo::WalletRepository;
-use crate::service::notice::notice;
+use crate::service::notice::msg;
 use crate::service::notice::MsgType;
 use crate::service::rpc::history_update;
 
@@ -49,7 +49,7 @@ pub async fn refresh_balance() -> Result<(), String> {
     wallets
         .iter()
         .for_each(|x: &Wallet| x.clone().update(&repo));
-    notice(MsgType::BalanceRefreshEnd, ());
+    msg(MsgType::BalanceRefreshEnd, ());
     Ok(())
 }
 

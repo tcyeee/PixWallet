@@ -6,6 +6,10 @@ export type WalletInfo = {
 }
 
 export enum MsgType {
+    /* 显示在界面正上方 */
+    ALERT = "ALERT",
+    /* 显示在界面右上角 */
+    NOTICE = "NOTICE",
     /* 网络状态信息 */
     PING = "PING",
     /* 全部账户查询完毕 */
@@ -46,4 +50,16 @@ export enum Status {
     PROCESSED = "Processed",
     CONFIRMED = "Confirmed",
     FINALIZED = "Finalized",
+}
+
+export type NoticeParams = {
+    level: NoticeEnum,
+    content: string,
+}
+
+export enum NoticeEnum {
+    SUCCESS = "SUCCESS",
+    WARNING = "WARNING",
+    ERROR = "ERROR",
+    INFO = "INFO",
 }

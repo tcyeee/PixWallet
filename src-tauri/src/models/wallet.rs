@@ -1,6 +1,6 @@
 use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::MsgType;
-use crate::{models::network::SolanaNetwork, service::notice::notice};
+use crate::{models::network::SolanaNetwork, service::notice::msg};
 use {
     bs58,
     serde::{Deserialize, Serialize},
@@ -144,7 +144,7 @@ impl Wallet {
                     if wallet.balance != Some(balance) {
                         let mut w = wallet;
                         w.balance = Some(balance);
-                        notice(MsgType::BalanceChange, &w);
+                        msg(MsgType::BalanceChange, &w);
                         results.lock().unwrap().push(w);
                     }
                 })
