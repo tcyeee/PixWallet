@@ -1,20 +1,21 @@
-use bs58;
-use serde::{Deserialize, Serialize};
-use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
-use solana_sdk::{
-    native_token::LAMPORTS_PER_SOL,
-    pubkey::Pubkey,
-    signature::{Keypair, Signer},
-    transaction::Transaction,
-};
-use solana_system_interface::instruction::transfer;
-use std::{
-    sync::{Arc, Mutex},
-    thread,
-};
-
-use crate::models::network::SolanaNetwork;
+use crate::models::{history::History, network::SolanaNetwork};
 use crate::repository::wallet_repo::WalletRepository;
+use {
+    bs58,
+    serde::{Deserialize, Serialize},
+    solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient},
+    solana_sdk::{
+        native_token::LAMPORTS_PER_SOL,
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+        transaction::Transaction,
+    },
+    solana_system_interface::instruction::transfer,
+    std::{
+        sync::{Arc, Mutex},
+        thread,
+    },
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Wallet {
@@ -28,30 +29,6 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    pub fn history(&self) -> Result<(), String> {
-        let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
-        let pubkey = &self.pubkey()?;
-        let signatures: Vec<
-            solana_client::rpc_response::RpcConfirmedTransactionStatusWithSignature,
-        > = client
-            .get_signatures_for_address_with_config(
-                pubkey,
-                GetConfirmedSignaturesForAddress2Config {
-                    limit: Some(100), // 默认最多1000
-                    before: None,
-                    until: None,
-                    commitment: None,
-                },
-            )
-            .unwrap();
-
-        println!("开始检查账户:{:?}的100条记录", &self.alias);
-        for sig in signatures {
-            println!("Signature: {}, Slot: {}", sig.signature, sig.slot);
-        }
-        Ok(())
-    }
-
     pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
         println!("==================[START]==================");
         let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);

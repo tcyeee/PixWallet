@@ -3576,6 +3576,7 @@ name = "pix_wallet"
 version = "0.1.0"
 dependencies = [
  "bs58",
+ "once_cell",
  "rusqlite",
  "serde",
  "serde_json",

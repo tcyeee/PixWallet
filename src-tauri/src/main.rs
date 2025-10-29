@@ -8,6 +8,8 @@ mod service;
 
 use db::establish_connection;
 
+use crate::service::notice::APP_HANDLE;
+
 #[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 async fn main() {
@@ -28,7 +30,9 @@ async fn main() {
         ])
         .setup(|app| {
             let app_handle = app.handle();
-            service::network_monitor::start_monitor(app_handle.clone());
+            APP_HANDLE.set(app_handle.clone()).unwrap();
+            // PING
+            service::network_monitor::start_monitor();
             Ok(())
         })
         .run(tauri::generate_context!())
