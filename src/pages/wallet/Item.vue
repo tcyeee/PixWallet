@@ -3,13 +3,16 @@
 
   <div class="card bg-base-100 w-96 shadow-sm bg-gradient-to-r from-[#ff7e5f] to-[#feb47b] mt-10">
     <div class="card-body">
-      <div>
-        <h2 class="card-title">{{ walletInfo.alias }}</h2>
-        <div class="flex gap-2 mb-5 items-center">
-          <div class="text-3xl text-green-800 font-bold">{{ walletInfo.balance }}</div>
+      <div class="flex gap-2 mb-5 items-center">
+        <div class="text-4xl text-green-800 font-bold">{{ walletInfo.balance }}</div>
+        <div>
           <div class="text-green-900">Lamport</div>
+          <div class="bg-green-800/20 rounded px-2 text-xs text-green-700">{{ walletInfo.network }}</div>
         </div>
       </div>
+
+      <div class="text-lg">{{ walletInfo.alias }}</div>
+
       <div class="flex gap-2 items-center">
         <div class=" truncate break-all text-sm  rounded bg-gray-900/10 text-gray-600 p-1">{{ walletInfo.public_key }}</div>
         <button class="btn btn-neutral btn-dash btn-xs" @click="copy(String(walletInfo.public_key))">Copy</button>
@@ -20,7 +23,7 @@
     <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
   </div>
 
-  <!-- <div class="space-y-2 mb-4">
+  <div class="space-y-2 mb-4">
     <div class="flex items-center">
       <span class="w-24 font-medium">Alias:</span>
       <div class="flex gap-2 w-full">
@@ -28,11 +31,7 @@
         <button class="btn" @click="changeAlias()">修改</button>
       </div>
     </div>
-    <div class="flex items-center">
-      <span class="w-24 font-medium">Network:</span>
-      <span class="truncate">{{ walletInfo.network }}</span>
-    </div>
-  </div> -->
+  </div>
 
   <div class="overflow-x-auto">
     <table class="table table-xs table-fixed">
@@ -41,9 +40,8 @@
           <th class="w-8"></th>
           <th class="truncate min-w-64">SIGNATURE</th>
           <th class="w-20">SLOT</th>
-          <th class="w-50">BLOCK TIME</th>
-          <th class="w-40">STATUS</th>
-          <th class="w-20">REMARK</th>
+          <th class="w-35">BLOCK TIME</th>
+          <th class="w-30">STATUS</th>
         </tr>
       </thead>
       <tbody>
@@ -58,12 +56,11 @@
           <th>{{ item.slot }}</th>
           <th>
             <div v-if="item.new_flag" class="badge badge-xs badge-success">new</div>
-            {{ formatTimestamp(item.block_time!) }}
+            {{ formatRelativeTime(item.block_time!) }}
           </th>
           <th :class="item.new_flag?'opacity-100':'opacity-80'">
             <TransferStatus :status="item.confirmation_status" />
           </th>
-          <th>{{ item.remark || 'None'}}</th>
         </tr>
       </tbody>
     </table>
@@ -75,7 +72,7 @@ import API from "@/api";
 import { useRoute } from "vue-router";
 import NAV from "@/router";
 import { AccountHistory, MsgType } from "@/models";
-import { formatTimestamp } from "@/utils/common";
+import { formatRelativeTime } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
 import TransferStatus from "../components/TransferStatus.vue";
