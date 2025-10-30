@@ -5,6 +5,7 @@ mod db;
 mod models;
 mod repository;
 mod service;
+mod utils;
 
 use crate::{db::connection::establish_connection, service::notice::APP_HANDLE};
 

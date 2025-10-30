@@ -25,8 +25,10 @@
     <p class="validator-hint">Must be between be 1 to 10</p>
   </fieldset>
 
-  <button class="btn btn-primary mt-3" @click="transfer()">Transfer</button>
-
+  <button class="btn btn-primary mt-3" :disabled="loadingTransfer" @click="transfer()">
+    <span v-if="loadingTransfer" class="loading loading-spinner"></span>
+    <p>Transfer</p>
+  </button>
   <hr class="my-10">
   <div>{{ params.to }}</div>
 </template>
@@ -34,7 +36,7 @@
 <script setup lang="ts">
 import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import API from "@/api";
 import { TransferParams } from "@/models";
 
@@ -44,11 +46,13 @@ const walletSelectTip = "Pickup wallet";
 
 const params = reactive<TransferParams>({
   from: "4sye9rKvY89DFtSbUXRsH46b4PbCnjxj4n2zMYzkdVC8",
-  to: "HHEXS4qbiLLavqLN39XxXQM9YrdYKYJBPjmAkCoGrYPS",
+  to: "BzKahuNc6wGMmK21Y2TxZfN53RemKEzwnEkNx4jddgAg",
   amount: 0.1,
 });
 
+const loadingTransfer = ref(false);
 function transfer() {
+  loadingTransfer.value = true;
   API.Transfer(params);
 }
 </script>

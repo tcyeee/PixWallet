@@ -1,17 +1,16 @@
-use crate::repository::wallet_repo::WalletRepository;
-use crate::service::notice::{show, MsgType, NoticeType};
-use crate::{models::network::SolanaNetwork, service::notice::msg};
+use crate::{
+    models::network::SolanaNetwork,
+    repository::wallet_repo::WalletRepository,
+    service::notice::{msg, show, MsgType, NoticeType},
+};
 use {
     bs58,
     serde::{Deserialize, Serialize},
     solana_client::rpc_client::RpcClient,
     solana_sdk::{
-        native_token::LAMPORTS_PER_SOL,
         pubkey::Pubkey,
         signature::{Keypair, Signer},
-        transaction::Transaction,
     },
-    solana_system_interface::instruction::transfer,
     std::{
         sync::{Arc, Mutex},
         thread,
@@ -30,28 +29,28 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
-        println!("==================[START]==================");
-        let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
-        let sender: Keypair = self.keypair();
-        let transfer_amount = (amount * LAMPORTS_PER_SOL as f32) as u64;
+    // pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
+    //     println!("==================[START]==================");
+    //     let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
+    //     let sender: Keypair = self.keypair();
+    //     let transfer_amount = (amount * LAMPORTS_PER_SOL as f32) as u64;
 
-        let transfer_instruction = transfer(&sender.pubkey(), &recipient, transfer_amount);
-        let mut transaction =
-            Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
-        let blockhash = client.get_latest_blockhash().map_err(|e| e.to_string())?;
-        transaction.sign(&[&sender], blockhash);
+    //     let transfer_instruction = transfer(&sender.pubkey(), &recipient, transfer_amount);
+    //     let mut transaction =
+    //         Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
+    //     let blockhash = client.get_latest_blockhash().map_err(|e| e.to_string())?;
+    //     transaction.sign(&[&sender], blockhash);
 
-        // Send the transaction to the network
-        let transaction_signature = client
-            .send_and_confirm_transaction(&transaction)
-            .map_err(|e| e.to_string())?;
+    //     // Send the transaction to the network
+    //     let transaction_signature = client
+    //         .send_and_confirm_transaction(&transaction)
+    //         .map_err(|e| e.to_string())?;
 
-        println!("=================");
-        println!("Transaction Signature: {}", transaction_signature);
-        println!("==================[END]==================");
-        Ok(())
-    }
+    //     println!("=================");
+    //     println!("Transaction Signature: {}", transaction_signature);
+    //     println!("==================[END]==================");
+    //     Ok(())
+    // }
 
     pub fn insert(&self, repo: &WalletRepository) -> Result<(), rusqlite::Error> {
         repo.insert(&self);
@@ -80,10 +79,10 @@ impl Wallet {
             .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))
     }
 
-    /* 通过私钥, 获取用于转账的密钥对 */
-    pub fn keypair(&self) -> Keypair {
-        Keypair::from_base58_string(&self.private_key)
-    }
+    // /* 通过私钥, 获取用于转账的密钥对 */
+    // pub fn keypair(&self) -> Keypair {
+    //     Keypair::from_base58_string(&self.private_key)
+    // }
 
     pub fn query_balance(&self) -> Result<u64, String> {
         let balance = SolanaNetwork::get_rpc_client(self.network)

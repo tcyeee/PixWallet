@@ -5,7 +5,7 @@ use crate::repository::history_repo::HistoryRepository;
 use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::MsgType;
 use crate::service::notice::{msg, show, NoticeType};
-use crate::service::rpc::history_update;
+use crate::service::rpc::{self, history_update};
 
 #[tauri::command]
 pub fn query_wallet() -> Vec<Wallet> {
@@ -56,11 +56,8 @@ pub async fn refresh_balance() -> Result<(), String> {
 #[tauri::command]
 pub async fn transfer(params: TransferParams) -> Result<(), String> {
     let repo = WalletRepository::new();
-
     let wallet = Wallet::query_by_public_key(&repo, &params.from);
-    let receiving = Wallet::query_by_public_key(&repo, &params.to);
-    let receiving_public_key = receiving.pubkey()?;
-    wallet.transfer(receiving_public_key, params.amount)?;
+    rpc::transfer(wallet, params.to, params.amount);
     Ok(())
 }
 
