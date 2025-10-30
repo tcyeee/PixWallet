@@ -110,11 +110,9 @@ impl Wallet {
                         .clone()
                         .unwrap_or(format!("{}...", &wallet.public_key[0..10]));
 
-                    let content = format!("账户{:?}更新完成..", name);
                     let balance = match wallet.query_balance() {
                         Ok(x) => {
                             println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
-                            show(NoticeType::Success, &content);
                             x
                         }
                         Err(_) => {
@@ -128,6 +126,7 @@ impl Wallet {
                         let mut w = wallet;
                         w.balance = Some(balance);
                         msg(MsgType::RefreshWallet, &w);
+                        show(NoticeType::Success, &format!("账户{:?}余额变动..", name));
                         results.lock().unwrap().push(w);
                     }
                 })

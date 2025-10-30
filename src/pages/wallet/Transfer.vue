@@ -70,6 +70,7 @@ const transferInfoList = ref<string[]>(["等待操作"]);
 onMounted(async () => {
   buttonListen = await listen<string>(MsgType.TRANSFER_END, () => {
     loadingTransfer.value = false;
+    API.WalletBalanceRefresh();
   });
   infoListen = await listen<string>(MsgType.TRANSFER_INFO, (event) => {
     transferInfoList.value.push(event.payload);
