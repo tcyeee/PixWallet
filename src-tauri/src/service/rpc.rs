@@ -7,6 +7,7 @@ use crate::{
     repository::history_repo::HistoryRepository,
     service::notice::{self, show, NoticeType},
 };
+use chrono::Local;
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{
@@ -54,6 +55,10 @@ pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
     transfer_record("交易数据上传完成..");
     transfer_record(&format!("交易完成,签名:{}", signature));
     transfer_record("更新支付账户余额..");
+
+    // 更新余额
+    payer.clone().refresh_balance();
+
     transfer_record("更新交易记录..");
     transfer_record("🎉🎉🎉交易成功!..");
     notice::show(NoticeType::Success, "恭喜,交易完成!");
@@ -62,8 +67,13 @@ pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
 
 fn transfer_record(content: &str) {
     thread::sleep(Duration::from_millis(150));
-    notice::msg(notice::MsgType::TransferInfo, content);
-    println!("[Transfer] {}", content);
+
+    let now = Local::now();
+    let formatted = now.format("%Y-%m-%d %H:%M:%S").to_string();
+    let content = format!("{} {}", formatted, content);
+
+    notice::msg(notice::MsgType::TransferInfo, &content);
+    println!("[Transfer] {}", &content);
 }
 
 pub fn history_update(
@@ -125,3 +135,14 @@ pub fn get_public_key_by_str(public_key_str: &str) -> Result<Pubkey, String> {
         .parse()
         .map_err(|e| format!("无效的公钥 ({}): {}", public_key_str, e))
 }
+
+// pub fn query_balance_by_pub_key(
+//     public_key_str: &str,
+//     network: SolanaNetwork,
+// ) -> Result<u64, String> {
+//     let pub_key: Pubkey = get_public_key_by_str(public_key_str)?;
+//     let balance = SolanaNetwork::get_rpc_client(network)
+//         .get_balance(&pub_key)
+//         .map_err(|e| format!("查询余额失败: {}", e))?;
+//     Ok(balance)
+// }

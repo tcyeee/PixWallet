@@ -1,3 +1,5 @@
+use crate::service::notice;
+use crate::try_notice;
 use crate::{
     models::network::SolanaNetwork,
     repository::wallet_repo::WalletRepository,
@@ -46,10 +48,6 @@ impl Wallet {
         Ok(())
     }
 
-    pub fn update(self, repo: &WalletRepository) {
-        repo.update(self);
-    }
-
     pub fn pubkey(&self) -> Result<Pubkey, String> {
         self.public_key
             .parse()
@@ -93,15 +91,11 @@ impl Wallet {
         Ok(wallet_info)
     }
 
-    pub fn query_all(repo: &WalletRepository) -> Vec<Self> {
-        repo.all()
-    }
-
     /**
      * 异步查询钱包余额
      * 查询完成以后,将会返回所有有变动的钱包信息
      */
-    pub fn refresh_wallet(wallets: Vec<Wallet>) -> Result<Vec<Wallet>, String> {
+    pub fn refresh_wallets(wallets: Vec<Wallet>) -> Result<Vec<Wallet>, String> {
         let results = Arc::new(Mutex::new(Vec::new()));
 
         let handles: Vec<_> = wallets
@@ -147,5 +141,24 @@ impl Wallet {
             .unwrap()
             .into_inner()
             .map_err(|e| e.to_string())
+    }
+
+    // 刷新单个账户余额,同时通知到前端
+    pub fn refresh_balance(&mut self) {
+        let new_balance = match self.query_balance() {
+            Ok(x) => x,
+            Err(e) => {
+                notice::show(NoticeType::Error, &e);
+                return;
+            }
+        };
+
+        if self.balance.unwrap_or(0) == new_balance {
+            return;
+        }
+
+        self.balance = Some(new_balance);
+        let repo = WalletRepository::new();
+        repo.update(self.clone());
     }
 }

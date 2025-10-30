@@ -10,7 +10,7 @@ use crate::service::rpc::{self, history_update};
 #[tauri::command]
 pub fn query_wallet() -> Vec<Wallet> {
     let repo = WalletRepository::new();
-    Wallet::query_all(&repo)
+    repo.all()
 }
 
 #[tauri::command]
@@ -26,8 +26,8 @@ pub fn change_alias(public_key: &str, new_alias: &str) -> Vec<Wallet> {
     let repo = WalletRepository::new();
     let mut wallet = Wallet::query_by_public_key(&repo, public_key);
     wallet.alias = Some(new_alias.to_string());
-    wallet.update(&repo);
-    Wallet::query_all(&repo)
+    repo.update(wallet);
+    repo.all()
 }
 
 #[tauri::command]
@@ -41,14 +41,13 @@ pub fn delete_wallet(public_key: &str) -> Result<(), String> {
 pub async fn refresh_balance() -> Result<(), String> {
     let repo = WalletRepository::new();
     // 用户的全部账户
-    let wallets = Wallet::query_all(&repo);
+    let wallets = repo.all();
     // 多线程刷新余额
-    let wallets = Wallet::refresh_wallet(wallets)?;
+    let wallets = Wallet::refresh_wallets(wallets)?;
 
     // 挨个更新余额变动的账户
-    wallets
-        .iter()
-        .for_each(|x: &Wallet| x.clone().update(&repo));
+    wallets.iter().for_each(|x: &Wallet| repo.update(x.clone()));
+
     msg(MsgType::BalanceRefreshEnd, ());
     Ok(())
 }
