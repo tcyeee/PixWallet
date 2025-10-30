@@ -109,19 +109,26 @@ impl Wallet {
             .map(|wallet| {
                 let results = Arc::clone(&results);
                 thread::spawn(move || {
-                    let balance = wallet.query_balance().unwrap_or_default();
+                    let name = wallet
+                        .alias
+                        .clone()
+                        .unwrap_or(format!("{}...", &wallet.public_key[0..10]));
 
-                    {
-                        println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
-                        let name = wallet
-                            .alias
-                            .clone()
-                            .unwrap_or(format!("{}...", &wallet.public_key[0..10]));
-                        let content = format!("账户{:?}更新完成..", name);
-                        show(NoticeType::Success, &content);
-                    }
+                    let content = format!("账户{:?}更新完成..", name);
+                    let balance = match wallet.query_balance() {
+                        Ok(x) => {
+                            println!("[DEBUG] 账户: {} 查询完毕", wallet.public_key);
+                            show(NoticeType::Success, &content);
+                            x
+                        }
+                        Err(_) => {
+                            let content = format!("账户{:?}更新失败..", name);
+                            show(NoticeType::Error, &content);
+                            return;
+                        }
+                    };
 
-                    if wallet.balance != Some(balance) {
+                    if wallet.balance.unwrap_or(0) != balance {
                         let mut w = wallet;
                         w.balance = Some(balance);
                         msg(MsgType::BalanceChange, &w);
