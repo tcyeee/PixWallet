@@ -25,7 +25,9 @@
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
         <td>{{ item.network }}</td>
-        <td>{{ formatSol(item.balance) }}</td>
+        <td>
+          <div class="font-bold text-green-800">{{ lamportsToSol(item.balance) + ' Sol' }}</div>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -35,7 +37,7 @@
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { MsgType } from "@/models";
-import { formatSol } from "@/utils/common";
+import { lamportsToSol } from "@/utils/common";
 import API from "@/api";
 import NAV from "@/router";
 import { useUserStore } from "@/stores/user";

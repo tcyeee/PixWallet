@@ -1,7 +1,11 @@
-export function formatSol(lamport: number | undefined): string {
-    if (!lamport) return "0 SOL";
-    if (lamport < 10000) return lamport + " lamport"
-    return (lamport / 1_000_000_000).toFixed(2) + " SOL";
+/**
+ * 将 lamports 转换为 SOL，并保留两位小数
+ * @param lamports lamports 数量
+ * @returns SOL 字符串，例如 "0.01"
+ */
+export function lamportsToSol(lamports: number): string {
+    const sol = lamports / 1_000_000_000; // 1 SOL = 10^9 lamports
+    return sol.toFixed(2);
 }
 
 
