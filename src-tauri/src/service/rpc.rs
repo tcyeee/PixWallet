@@ -55,10 +55,6 @@ pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
     transfer_record("交易数据上传完成..");
     transfer_record(&format!("交易完成,签名:{}", signature));
     transfer_record("更新支付账户余额..");
-
-    // 更新余额
-    payer.clone().refresh_balance();
-
     transfer_record("更新交易记录..");
     transfer_record("🎉🎉🎉交易成功!..");
     notice::show(NoticeType::Success, "恭喜,交易完成!");

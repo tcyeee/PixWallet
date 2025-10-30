@@ -68,9 +68,8 @@ let buttonListen: (() => void) | null = null;
 let infoListen: (() => void) | null = null;
 const transferInfoList = ref<string[]>(["等待操作"]);
 onMounted(async () => {
-  buttonListen = await listen<string>(MsgType.TRANSFER_END, (receiver) => {
+  buttonListen = await listen<string>(MsgType.TRANSFER_END, () => {
     loadingTransfer.value = false;
-    console.log(receiver);
   });
   infoListen = await listen<string>(MsgType.TRANSFER_INFO, (event) => {
     transferInfoList.value.push(event.payload);

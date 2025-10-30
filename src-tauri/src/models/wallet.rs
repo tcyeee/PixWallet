@@ -87,6 +87,9 @@ impl Wallet {
             updated_at: Some(0),
             created_at: Some(0),
         };
+
+        notice::show(NoticeType::Success, "账户创建成功");
+
         Ok(wallet_info)
     }
 
@@ -143,7 +146,7 @@ impl Wallet {
     }
 
     // 刷新单个账户余额,同时通知到前端
-    pub fn refresh_balance(&mut self) {
+    pub fn _refresh_balance(&mut self) {
         let new_balance = match self.query_balance() {
             Ok(x) => x,
             Err(e) => {
