@@ -5,7 +5,10 @@ import API from "@/api";
 export const useUserStore = defineStore('app', {
     state: () => ({
         network: {} as NetworkStatus,  // 当前网络状态
-        wallets: [] as WalletInfo[]    // 用户钱包列表
+        wallets: [] as WalletInfo[],   // 用户钱包列表
+        loading: {
+            refresh: false,
+        }
     }),
     actions: {
         ping(statue: NetworkStatus) {
@@ -21,7 +24,7 @@ export const useUserStore = defineStore('app', {
         },
         addWallet(wallet: WalletInfo) {
             this.wallets.push(wallet)
-        }
+        },
     },
     persist: true
 })

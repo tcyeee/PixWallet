@@ -1,7 +1,7 @@
-use crate::models::{message_type::MsgType, network::SolanaNetwork};
+use crate::models::network::SolanaNetwork;
+use crate::service::notice::{msg, MsgType};
 use solana_client::rpc_client::RpcClient;
 use std::time::Instant;
-use tauri::{AppHandle, Emitter};
 use tokio::time::timeout;
 use tokio::time::{sleep, Duration};
 
@@ -37,17 +37,17 @@ impl NetworkStatus {
     }
 }
 
-pub fn start_monitor(app: AppHandle) {
+pub fn start_monitor() {
     tokio::spawn(async move {
         let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Devnet);
         loop {
-            check(&client, &app).await;
+            check(&client).await;
             sleep(Duration::from_secs(5)).await;
         }
     });
 }
 
-pub async fn check(client: &RpcClient, app: &AppHandle) {
+pub async fn check(client: &RpcClient) {
     let start = Instant::now();
     let result = timeout(Duration::from_secs(5), async { client.get_health() }).await;
     let elapsed = start.elapsed().as_millis();
@@ -55,19 +55,17 @@ pub async fn check(client: &RpcClient, app: &AppHandle) {
         Ok(health) => match health {
             Ok(_) => {
                 if elapsed <= 1000 {
-                    send(app, NetworkStatus::Good(elapsed));
+                    sends(NetworkStatus::Good(elapsed));
                 } else {
-                    send(app, NetworkStatus::Poor(elapsed));
+                    sends(NetworkStatus::Poor(elapsed));
                 }
             }
-            Err(_) => send(app, NetworkStatus::Lost(elapsed)),
+            Err(_) => sends(NetworkStatus::Lost(elapsed)),
         },
-        Err(_) => send(app, NetworkStatus::Lost(9999)),
+        Err(_) => sends(NetworkStatus::Lost(9999)),
     }
 }
 
-fn send(app: &AppHandle, status: NetworkStatus) {
-    app.emit(MsgType::Ping.name(), status.assemble())
-        .inspect_err(|e| eprintln!("[NETWORK_CHECK] Failed to emit 'PING': {}", e))
-        .ok();
+fn sends(status: NetworkStatus) {
+    msg(MsgType::Ping, status.assemble());
 }

@@ -3,8 +3,8 @@
     <button type="submit" class="btn btn-primary" @click="createWallet()">
       <span v-if="loadingCreateWallet" class="loading loading-spinner"></span>
       Create wallet</button>
-    <button type="submit" class="btn btn-primary" :disabled="loadingRefreshBalance" @click="refreshBalance()">
-      <span v-if="loadingRefreshBalance" class="loading loading-spinner"></span>
+    <button type="submit" class="btn btn-primary" :disabled="userStore.loading.refresh" @click="refreshBalance()">
+      <span v-if="userStore.loading.refresh" class="loading loading-spinner"></span>
       Refresh Balance
     </button>
     <button type="submit" class="btn btn-primary" @click="NAV.GoTo('transfer')">Transfer</button>
@@ -25,7 +25,9 @@
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
         <td>{{ item.network }}</td>
-        <td>{{ formatSol(item.balance) }}</td>
+        <td>
+          <div class="font-bold text-green-800">{{ lamportsToSol(item.balance) + ' Sol' }}</div>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -35,7 +37,7 @@
 import { onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { MsgType } from "@/models";
-import { formatSol } from "@/utils/common";
+import { lamportsToSol } from "@/utils/common";
 import API from "@/api";
 import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
@@ -56,12 +58,11 @@ function createWallet() {
 }
 
 /* 余额刷新 */
-const loadingRefreshBalance = ref(false);
 function refreshBalance() {
-  loadingRefreshBalance.value = true;
+  userStore.loading.refresh = true;
   API.WalletBalanceRefresh();
 }
 listen<null>(MsgType.BALANCE_REFRESH_END, () => {
-  loadingRefreshBalance.value = false;
+  userStore.loading.refresh = false;
 });
 </script>

@@ -1,26 +1,26 @@
-use super::migrations::create_tables;
+use super::schema::TABLES;
+use once_cell::sync::OnceCell;
 use rusqlite::{Connection, Result};
-use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-pub fn establish_connection() -> Result<Mutex<Connection>, rusqlite::Error> {
-    // ✅ 数据库路径
-    let db_path: &'static str = "wallet.db";
-    let first_run: bool = !Path::new(db_path).exists();
+pub static DB_CONN: OnceCell<Arc<Mutex<Connection>>> = OnceCell::new();
 
-    // ✅ 建立数据库连接
-    let conn: Connection = Connection::open("wallet.db")?;
+pub fn establish_connection() {
+    // 初始化数据库
+    let conn: Connection = Connection::open("wallet.db").unwrap();
+    init_tables(&conn).expect("Failed to initialize database tables");
+    println!("✅ Database initialized successfully!");
 
-    // ✅ 首次运行时初始化表结构
-    if first_run {
-        create_tables(&conn).expect("Failed to initialize database tables");
-        println!("✅ Database initialized successfully!");
-    } else {
-        println!("📁 Database already exists, skipping initialization.");
+    // 设置全局 OnceCell
+    let conn_state = Arc::new(Mutex::new(conn));
+    DB_CONN
+        .set(conn_state.clone())
+        .expect("Database has been initialized");
+}
+
+pub fn init_tables(conn: &Connection) -> Result<(), String> {
+    for sql in TABLES {
+        conn.execute(sql, []).map_err(|e| e.to_string())?;
     }
-
-    // ✅ 使用 Mutex 封装 Connection，供前端 handler 使用
-    let conn_state: Mutex<_> = Mutex::new(conn);
-
-    Ok(conn_state)
+    Ok(())
 }

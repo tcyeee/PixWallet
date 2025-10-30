@@ -1,78 +1,96 @@
-use crate::models::wallet::WalletInfo;
-use crate::models::{message_type::MsgType, network::SolanaNetwork};
-use rusqlite::Connection;
-use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, State};
+use crate::models::{
+    dto::TransferParams, history::History, network::SolanaNetwork, wallet::Wallet,
+};
+use crate::repository::history_repo::HistoryRepository;
+use crate::repository::wallet_repo::WalletRepository;
+use crate::service::notice::MsgType;
+use crate::service::notice::{msg, show, NoticeType};
+use crate::service::rpc::{self, history_update};
 
-// 查询钱包信息
 #[tauri::command]
-pub fn query_wallet(conn_state: State<'_, Mutex<Connection>>) -> Result<Vec<WalletInfo>, String> {
-    let conn = conn_state.lock().unwrap();
-    WalletInfo::query_all(&conn)
+pub fn query_wallet() -> Vec<Wallet> {
+    let repo = WalletRepository::new();
+    repo.all()
 }
 
 #[tauri::command]
-pub fn create_wallet(
-    conn_state: State<'_, Mutex<Connection>>,
-    network: Option<SolanaNetwork>,
-) -> Result<WalletInfo, String> {
-    let conn = conn_state.lock().unwrap();
-    let wallet = WalletInfo::new(&conn, network)?;
-    wallet.insert(&conn).map_err(|e| e.to_string())?;
+pub async fn create_wallet(network: Option<SolanaNetwork>) -> Result<Wallet, String> {
+    let repo = WalletRepository::new();
+    let wallet = Wallet::new(&repo, network)?;
+    wallet.insert(&repo).map_err(|e| e.to_string())?;
     Ok(wallet)
 }
 
 #[tauri::command]
-pub fn change_alias(
-    conn_state: State<'_, Mutex<Connection>>,
-    public_key: &str,
-    new_alias: &str,
-) -> Result<Vec<WalletInfo>, String> {
-    let conn = conn_state.lock().unwrap();
-    let mut wallet = WalletInfo::query_by_public_key(&conn, public_key)?;
+pub fn change_alias(public_key: &str, new_alias: &str) -> Vec<Wallet> {
+    let repo = WalletRepository::new();
+    let mut wallet = Wallet::query_by_public_key(&repo, public_key);
     wallet.alias = Some(new_alias.to_string());
-    wallet.update(&conn);
-    WalletInfo::query_all(&conn)
+    repo.update(wallet);
+    repo.all()
 }
 
 #[tauri::command]
-pub fn delete_wallet(
-    conn_state: State<'_, Mutex<Connection>>,
-    public_key: &str,
-) -> Result<Vec<WalletInfo>, String> {
-    let conn = conn_state.lock().unwrap();
-    match WalletInfo::query_by_public_key(&conn, public_key)?.del(&conn) {
-        Ok(_) => {}
-        Err(e) => return Err(e),
-    }
-
-    WalletInfo::query_all(&conn)
+pub async fn delete_wallet(public_key: &str) -> Result<(), String> {
+    let repo = WalletRepository::new();
+    Wallet::query_by_public_key(&repo, public_key).del(&repo)
 }
 
 // 异步刷新余额
 #[tauri::command]
-pub async fn refresh_balance(
-    conn_state: State<'_, Mutex<Connection>>,
-    app: AppHandle,
-) -> Result<(), String> {
-    let conn = conn_state.lock().unwrap();
+pub async fn refresh_balance() -> Result<(), String> {
+    let repo = WalletRepository::new();
     // 用户的全部账户
-    let wallets = WalletInfo::query_all(&conn)?;
+    let wallets = repo.all();
     // 多线程刷新余额
-    let wallets = WalletInfo::refresh_wallet(wallets)?;
+    let wallets = Wallet::refresh_wallets(wallets)?;
+
     // 挨个更新余额变动的账户
-    wallets.iter().for_each(|x| {
-        x.update(&conn);
-        // 通知前端某个账户更新
-        app.emit(MsgType::BalanceChange.name(), x).unwrap();
-        ()
-    });
-    // 通知前端所有的查询均已结束
-    app.emit(MsgType::BalanceRefreshEnd.name(), ()).unwrap();
+    wallets.iter().for_each(|x: &Wallet| repo.update(x.clone()));
+
+    msg(MsgType::BalanceRefreshEnd, ());
     Ok(())
 }
 
 #[tauri::command]
-pub async fn transfer() -> Result<(), String> {
+pub async fn transfer(params: TransferParams) -> Result<(), String> {
+    let repo = WalletRepository::new();
+    let wallet = Wallet::query_by_public_key(&repo, &params.from);
+    rpc::transfer(wallet, params.to, params.amount);
     Ok(())
+}
+
+/**
+ * 查询钱包动账历史
+ * 1.分别查询本地历史,和线上历史,拿到本地历史以后立即返回.
+ * 2.优先显示本地历史,等待线上历史查询结束后,将其合并
+ *
+ * #合并步骤
+ * 拿到本地List最新的一条的时间,在线上数据中,拿到所有大于改时间的信息
+ * 将更新数据存储到数据库,同时异步通知到前端.
+ */
+#[tauri::command]
+pub async fn account_history(public_key: String) -> Result<Vec<History>, String> {
+    let repo = HistoryRepository::new();
+    let list = repo.list(&public_key);
+    let list_clone = list.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        match history_update(&list_clone, &public_key, SolanaNetwork::Devnet) {
+            Ok(()) => show(NoticeType::Success, "同步完成"),
+            Err(e) => {
+                show(NoticeType::Error, &format!("网络同步失败:{}", e));
+                eprintln!("{}", e)
+            }
+        };
+    });
+
+    Ok(list)
+}
+
+#[tauri::command]
+pub async fn transfer_detail(
+    signature: &str,
+) -> Result<solana_transaction_status_client_types::EncodedConfirmedTransactionWithStatusMeta, String>
+{
+    rpc::transfer_detail(signature)
 }
