@@ -1,5 +1,4 @@
 use crate::service::notice;
-use crate::try_notice;
 use crate::{
     models::network::SolanaNetwork,
     repository::wallet_repo::WalletRepository,

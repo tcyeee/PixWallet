@@ -69,7 +69,7 @@ fn transfer_record(content: &str) {
     thread::sleep(Duration::from_millis(150));
 
     let now = Local::now();
-    let formatted = now.format("%Y-%m-%d %H:%M:%S").to_string();
+    let formatted = now.format("%H:%M:%S").to_string();
     let content = format!("{} {}", formatted, content);
 
     notice::msg(notice::MsgType::TransferInfo, &content);
