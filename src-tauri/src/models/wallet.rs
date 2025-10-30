@@ -29,29 +29,6 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    // pub fn transfer(&self, recipient: Pubkey, amount: f32) -> Result<(), String> {
-    //     println!("==================[START]==================");
-    //     let client: RpcClient = SolanaNetwork::get_rpc_client(self.network);
-    //     let sender: Keypair = self.keypair();
-    //     let transfer_amount = (amount * LAMPORTS_PER_SOL as f32) as u64;
-
-    //     let transfer_instruction = transfer(&sender.pubkey(), &recipient, transfer_amount);
-    //     let mut transaction =
-    //         Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
-    //     let blockhash = client.get_latest_blockhash().map_err(|e| e.to_string())?;
-    //     transaction.sign(&[&sender], blockhash);
-
-    //     // Send the transaction to the network
-    //     let transaction_signature = client
-    //         .send_and_confirm_transaction(&transaction)
-    //         .map_err(|e| e.to_string())?;
-
-    //     println!("=================");
-    //     println!("Transaction Signature: {}", transaction_signature);
-    //     println!("==================[END]==================");
-    //     Ok(())
-    // }
-
     pub fn insert(&self, repo: &WalletRepository) -> Result<(), rusqlite::Error> {
         repo.insert(&self);
         Ok(())
@@ -78,11 +55,6 @@ impl Wallet {
             .parse()
             .map_err(|e| format!("无效的公钥 ({}): {}", self.public_key, e))
     }
-
-    // /* 通过私钥, 获取用于转账的密钥对 */
-    // pub fn keypair(&self) -> Keypair {
-    //     Keypair::from_base58_string(&self.private_key)
-    // }
 
     pub fn query_balance(&self) -> Result<u64, String> {
         let balance = SolanaNetwork::get_rpc_client(self.network)

@@ -1,3 +1,6 @@
+use std::thread;
+use std::time::Duration;
+
 use crate::try_notice;
 use crate::{
     models::{history::History, network::SolanaNetwork, wallet::Wallet},
@@ -26,26 +29,33 @@ pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
         transfer_amount,
     );
 
-    println!("[DEBUG] 开始转账..");
+    transfer_record("开始转账..");
     let blockhash_result = client.get_latest_blockhash().map_err(|e| e.to_string());
     let blockhash = try_notice!(blockhash_result);
-    println!("[DEBUG] Transfer 获取到最新区块:{}..", blockhash);
+    transfer_record(&format!("获取到最新区块:{}", blockhash));
 
     let mut transaction =
         Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
     transaction.sign(&[&sender], blockhash);
-    println!("[DEBUG] Transfer 构建转账命令完成..");
-
-    println!("[DEBUG] Transfer 开始上传交易数据..");
+    transfer_record("交易命令构建完成..");
+    transfer_record("开始上传交易数据..");
     let signature_result = client
         .send_and_confirm_transaction(&transaction)
         .map_err(|e| e.to_string());
     let signature = try_notice!(signature_result);
-    println!("[DEBUG] Transfer 交易数据上传完成..");
-    println!("[DEBUG] Transfer 交易完成, 签名:{}", signature);
+    transfer_record("交易数据上传完成..");
+    transfer_record(&format!("交易完成,签名:{}", signature));
+    transfer_record("更新支付账户余额..");
+    transfer_record("更新交易记录..");
+    transfer_record("🎉🎉🎉交易成功!..");
+    notice::show(NoticeType::Success, "恭喜,交易完成!");
+    notice::msg(notice::MsgType::TransferEnd, &receiver_public_key);
+}
 
-    println!("[DEBUG] Transfer 更新支付账户余额..");
-    println!("[DEBUG] Transfer 更新交易记录..");
+fn transfer_record(content: &str) {
+    thread::sleep(Duration::from_millis(150));
+    notice::msg(notice::MsgType::TransferInfo, content);
+    println!("[Transfer] {}", content);
 }
 
 pub fn history_update(

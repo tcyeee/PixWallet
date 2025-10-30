@@ -12,6 +12,8 @@ pub enum MsgType {
     Ping,
     RefreshHistory,
     BalanceRefreshEnd,
+    TransferEnd,
+    TransferInfo,
     BalanceChange,
 }
 
@@ -19,6 +21,8 @@ impl MsgType {
     pub fn name(&self) -> &'static str {
         match self {
             MsgType::Ping => "PING",
+            MsgType::TransferEnd => "TRANSFER_END",
+            MsgType::TransferInfo => "TRANSFER_INFO",
             MsgType::RefreshHistory => "REFRESH_HISTORY",
             MsgType::BalanceRefreshEnd => "BALANCE_REFRESH_END",
             MsgType::BalanceChange => "BALANCE_CHANGE",

@@ -12,6 +12,10 @@ export enum MsgType {
     NOTICE = "NOTICE",
     /* 网络状态信息 */
     PING = "PING",
+    /* 交易完毕 */
+    TRANSFER_END = "TRANSFER_END",
+    /* 交易信息 */
+    TRANSFER_INFO = "TRANSFER_INFO",
     /* 全部账户查询完毕 */
     BALANCE_REFRESH_END = "BALANCE_REFRESH_END",
     /* 全部账户历史查询完毕 */
