@@ -1,7 +1,7 @@
 use crate::{
     models::{history::History, network::SolanaNetwork},
     repository::history_repo::HistoryRepository,
-    service::notice::{show, NoticeType},
+    service::notice::{self, show, NoticeType},
 };
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::pubkey::Pubkey;
@@ -51,7 +51,10 @@ pub fn history_update(
 
     if !new_history.is_empty() {
         let repo = HistoryRepository::new();
-        repo.insert_batch(new_history)?;
+        repo.insert_batch(new_history.clone())?;
+
+        // Notice
+        notice::msg(notice::MsgType::RefreshHistory, new_history);
     }
 
     Ok(())

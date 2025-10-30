@@ -5,9 +5,15 @@
     <div class="card-body">
       <div>
         <h2 class="card-title">{{ walletInfo.alias }}</h2>
-        <div>{{ walletInfo.balance }} SOL</div>
+        <div class="flex gap-2 mb-5 items-center">
+          <div class="text-3xl text-green-800 font-bold">{{ walletInfo.balance }}</div>
+          <div class="text-green-900">Lamport</div>
+        </div>
       </div>
-      <span class="truncate break-all max-w-full text-sm py-1 rounded bg-gray-500/10 text-gray-600 pl-1">{{ walletInfo.public_key }}</span>
+      <div class="flex gap-2 items-center">
+        <div class=" truncate break-all text-sm  rounded bg-gray-900/10 text-gray-600 p-1">{{ walletInfo.public_key }}</div>
+        <button class="btn btn-neutral btn-dash btn-xs" @click="copy(String(walletInfo.public_key))">Copy</button>
+      </div>
     </div>
   </div>
   <div class="mt-3 flex mb-10">
@@ -56,12 +62,14 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
 import NAV from "@/router";
-import { AccountHistory } from "@/models";
+import { AccountHistory, MsgType } from "@/models";
 import { formatTimestamp } from "@/utils/common";
+import { listen } from "@tauri-apps/api/event";
+import { notify } from "@/utils/notify";
 
 const route = useRoute();
 const walletInfo = route.query;
@@ -74,7 +82,6 @@ var list = ref<AccountHistory[]>([]);
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
   API.WalletHistory(String(walletInfo.public_key)).then((res) => {
-    console.log(res);
     list.value = res || [];
   });
 }
@@ -91,4 +98,27 @@ function changeAlias() {
 function deleteAccount() {
   API.WalletDel({ publicKey: walletInfo?.public_key });
 }
+
+async function copy(content: string) {
+  try {
+    await navigator.clipboard.writeText(content);
+    notify.success("复制成功 ✅");
+    alert();
+  } catch (err) {
+    notify.error("Err");
+    console.error(err);
+  }
+}
+
+let unlisten: (() => void) | null = null;
+onMounted(async () => {
+  unlisten = await listen<Array<AccountHistory>>(
+    MsgType.REFRESH_HISTORY,
+    (res) => (list.value = [...res.payload, ...list.value])
+  );
+});
+
+onUnmounted(() => {
+  if (unlisten) unlisten();
+});
 </script>
