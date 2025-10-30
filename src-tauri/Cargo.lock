@@ -3586,6 +3586,7 @@ dependencies = [
  "solana-client",
  "solana-sdk",
  "solana-system-interface",
+ "solana-transaction-status-client-types",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",

@@ -86,3 +86,11 @@ pub async fn account_history(public_key: String) -> Result<Vec<History>, String>
 
     Ok(list)
 }
+
+#[tauri::command]
+pub async fn transfer_detail(
+    signature: &str,
+) -> Result<solana_transaction_status_client_types::EncodedConfirmedTransactionWithStatusMeta, String>
+{
+    rpc::transfer_detail(signature)
+}

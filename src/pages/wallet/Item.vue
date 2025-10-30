@@ -20,7 +20,7 @@
     </div>
   </div>
   <div class="mt-3 flex mb-10">
-    <WalletDelModal :wallet="walletInfo" />
+    <WalletDelModal :publicKey="String(walletInfo.public_key)" />
   </div>
 
   <div class="space-y-2 mb-4">
@@ -45,12 +45,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(item,index) in list" :key="item.signature">
+        <tr v-for="(item,index) in list" :key="item.signature" @click="selectOne(item)">
           <th>{{ index+1 }}</th>
           <th class=" ">
             <div class="flex gap-2">
               <div class="truncate text-gray-500">{{ item.signature }}</div>
-              <button class="btn btn-neutral btn-dash btn-xs" @click="copy(String(item.signature))">Copy</button>
+              <button class="btn btn-neutral btn-dash btn-xs" @click.stop="copy(String(item.signature))">Copy</button>
             </div>
           </th>
           <th>{{ item.slot }}</th>
@@ -130,4 +130,11 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unlisten) unlisten();
 });
+
+function selectOne(item: AccountHistory) {
+  API.TransferDetail(item.signature).then((res) => {
+    console.log("======");
+    console.log(res);
+  });
+}
 </script>

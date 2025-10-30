@@ -24,6 +24,7 @@ async fn main() {
             service::wallet::refresh_balance,
             service::wallet::transfer,
             service::wallet::account_history,
+            service::wallet::transfer_detail,
         ])
         .setup(|app| {
             APP_HANDLE.set(app.handle().clone()).unwrap();

@@ -8,7 +8,7 @@
       <div class="modal-box">
         <h3 class="text-lg font-bold">删除账户</h3>
         <p class="py-4">是否确认删除该账户? 此操作不可逆.</p>
-        <p>{{ wallet.public_key }}</p>
+        <p>{{ publicKey }}</p>
         <div class="modal-action">
           <button class="btn btn-error" :disabled="loading" @click="confirm()">
             <span v-if="loading" class="loading loading-spinner"></span>
@@ -23,16 +23,15 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import type { WalletInfo } from "@/models";
 import API from "@/api";
 import { notify } from "@/utils/notify";
 import NAV from "@/router";
 
 const props = defineProps<{
-  wallet: WalletInfo;
+  publicKey: String;
 }>();
 
-const modal = ref(null);
+const modal = ref<HTMLDialogElement | null>(null);
 function openModal() {
   modal.value?.showModal();
 }
@@ -43,7 +42,7 @@ function closeModal() {
 
 const loading = ref(false);
 async function confirm() {
-  const publicKey = String(props.wallet?.public_key);
+  const publicKey = String(props.publicKey);
   console.log(publicKey);
   loading.value = true;
   await API.WalletDel({ publicKey: publicKey });

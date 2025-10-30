@@ -22,6 +22,7 @@ serde_json = "1"
 solana-sdk = "3.0.0"
 solana-client = "3.0.0"
 solana-system-interface = "2.0.0"
+solana-transaction-status-client-types = "3.0.8"
 bs58 = "0.5.0"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
 tokio = "1.48.0"

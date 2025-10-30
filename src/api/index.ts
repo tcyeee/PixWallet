@@ -11,4 +11,5 @@ export default {
     WalletDel: (args?: InvokeArgs) => requery<Array<WalletInfo>>("delete_wallet", args),
     Transfer: (args?: TransferParams) => requery<null>("transfer", { params: args }),
     WalletHistory: (arg: string) => requery<Array<AccountHistory>>("account_history", { publicKey: arg }),
+    TransferDetail: (signature: string) => requery<any>("transfer_detail", { signature: signature }),
 }
