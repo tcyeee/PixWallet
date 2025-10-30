@@ -20,7 +20,7 @@
     <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
   </div>
 
-  <div class="space-y-2 mb-4">
+  <!-- <div class="space-y-2 mb-4">
     <div class="flex items-center">
       <span class="w-24 font-medium">Alias:</span>
       <div class="flex gap-2 w-full">
@@ -32,9 +32,7 @@
       <span class="w-24 font-medium">Network:</span>
       <span class="truncate">{{ walletInfo.network }}</span>
     </div>
-  </div>
-
-  <hr class="my-5" />
+  </div> -->
 
   <div class="overflow-x-auto">
     <table class="table table-xs table-fixed">
@@ -43,18 +41,28 @@
           <th class="w-8"></th>
           <th class="truncate min-w-64">SIGNATURE</th>
           <th class="w-20">SLOT</th>
-          <th class="w-40">BLOCK TIME</th>
-          <th class="w-20">STATUS</th>
+          <th class="w-50">BLOCK TIME</th>
+          <th class="w-40">STATUS</th>
           <th class="w-20">REMARK</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(item,index) in list" :key="item.signature">
           <th>{{ index+1 }}</th>
-          <th class="truncate text-gray-500">{{ item.signature }}</th>
+          <th class=" ">
+            <div class="flex gap-2">
+              <div class="truncate text-gray-500">{{ item.signature }}</div>
+              <button class="btn btn-neutral btn-dash btn-xs" @click="copy(String(item.signature))">Copy</button>
+            </div>
+          </th>
           <th>{{ item.slot }}</th>
-          <th>{{ formatTimestamp(item.block_time!) }}</th>
-          <th>{{ item.confirmation_status }}</th>
+          <th>
+            <div v-if="item.new_flag" class="badge badge-xs badge-success">new</div>
+            {{ formatTimestamp(item.block_time!) }}
+          </th>
+          <th :class="item.new_flag?'opacity-100':'opacity-80'">
+            <TransferStatus :status="item.confirmation_status" />
+          </th>
           <th>{{ item.remark || 'None'}}</th>
         </tr>
       </tbody>
@@ -70,6 +78,7 @@ import { AccountHistory, MsgType } from "@/models";
 import { formatTimestamp } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
+import TransferStatus from "../components/TransferStatus.vue";
 
 const route = useRoute();
 const walletInfo = route.query;
@@ -114,7 +123,13 @@ let unlisten: (() => void) | null = null;
 onMounted(async () => {
   unlisten = await listen<Array<AccountHistory>>(
     MsgType.REFRESH_HISTORY,
-    (res) => (list.value = [...res.payload, ...list.value])
+    (res) => {
+      var newList = res.payload;
+      newList.forEach((item) => {
+        item.new_flag = true;
+      });
+      list.value = [...res.payload, ...list.value];
+    }
   );
 });
 

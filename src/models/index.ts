@@ -51,6 +51,7 @@ export type AccountHistory = {
     confirmation_status?: Status;
     remark?: string;
     created_at: number;
+    new_flag: boolean;
 }
 export enum Status {
     PROCESSED = "Processed",
