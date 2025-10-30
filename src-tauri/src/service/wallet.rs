@@ -14,7 +14,7 @@ pub fn query_wallet() -> Vec<Wallet> {
 }
 
 #[tauri::command]
-pub fn create_wallet(network: Option<SolanaNetwork>) -> Result<Wallet, String> {
+pub async fn create_wallet(network: Option<SolanaNetwork>) -> Result<Wallet, String> {
     let repo = WalletRepository::new();
     let wallet = Wallet::new(&repo, network)?;
     wallet.insert(&repo).map_err(|e| e.to_string())?;
@@ -31,7 +31,7 @@ pub fn change_alias(public_key: &str, new_alias: &str) -> Vec<Wallet> {
 }
 
 #[tauri::command]
-pub fn delete_wallet(public_key: &str) -> Result<(), String> {
+pub async fn delete_wallet(public_key: &str) -> Result<(), String> {
     let repo = WalletRepository::new();
     Wallet::query_by_public_key(&repo, public_key).del(&repo)
 }

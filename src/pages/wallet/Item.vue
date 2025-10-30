@@ -20,7 +20,7 @@
     </div>
   </div>
   <div class="mt-3 flex mb-10">
-    <button class="btn btn-error" @click="deleteAccount()">删除账户</button>
+    <WalletDelModal :wallet="walletInfo" />
   </div>
 
   <div class="space-y-2 mb-4">
@@ -76,6 +76,7 @@ import { formatRelativeTime, lamportsToSol } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
 import TransferStatus from "../components/TransferStatus.vue";
+import WalletDelModal from "../components/WalletDelModal.vue";
 
 const route = useRoute();
 const walletInfo = route.query;
@@ -99,10 +100,6 @@ function changeAlias() {
     newAlias: alias.value,
   };
   API.WalletAliasUpdate(params);
-}
-
-function deleteAccount() {
-  API.WalletDel({ publicKey: walletInfo?.public_key });
 }
 
 async function copy(content: string) {

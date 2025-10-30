@@ -18,10 +18,10 @@ export enum MsgType {
     TRANSFER_INFO = "TRANSFER_INFO",
     /* 全部账户查询完毕 */
     BALANCE_REFRESH_END = "BALANCE_REFRESH_END",
-    /* 全部账户历史查询完毕 */
+    /* 刷新历史记录 */
     REFRESH_HISTORY = "REFRESH_HISTORY",
-    /* 单个账户更新通知 */
-    BALANCE_CHANGE = "BALANCE_CHANGE",
+    /* 刷新单个钱包 */
+    REFRESH_WALLET = "REFRESH_WALLET",
 }
 
 export enum NetworkHealth {

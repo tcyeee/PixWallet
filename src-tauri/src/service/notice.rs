@@ -10,22 +10,24 @@ pub static APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 #[derive(Debug, Serialize)]
 pub enum MsgType {
     Ping,
-    RefreshHistory,
     BalanceRefreshEnd,
     TransferEnd,
     TransferInfo,
-    BalanceChange,
+    /* 刷新钱包列表刷新 */
+    RefreshWallet,
+    /* 前端单个账户历史刷新 */
+    RefreshHistory,
 }
 
 impl MsgType {
     pub fn name(&self) -> &'static str {
         match self {
             MsgType::Ping => "PING",
+            MsgType::RefreshWallet => "REFRESH_WALLET",
             MsgType::TransferEnd => "TRANSFER_END",
             MsgType::TransferInfo => "TRANSFER_INFO",
             MsgType::RefreshHistory => "REFRESH_HISTORY",
             MsgType::BalanceRefreshEnd => "BALANCE_REFRESH_END",
-            MsgType::BalanceChange => "BALANCE_CHANGE",
         }
     }
 }

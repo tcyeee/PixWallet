@@ -127,7 +127,7 @@ impl Wallet {
                     if wallet.balance.unwrap_or(0) != balance {
                         let mut w = wallet;
                         w.balance = Some(balance);
-                        msg(MsgType::BalanceChange, &w);
+                        msg(MsgType::RefreshWallet, &w);
                         results.lock().unwrap().push(w);
                     }
                 })
@@ -162,6 +162,6 @@ impl Wallet {
         self.balance = Some(new_balance);
         let repo = WalletRepository::new();
         repo.update(self.clone());
-        notice::msg(MsgType::BalanceChange, &self);
+        notice::msg(MsgType::RefreshWallet, &self);
     }
 }

@@ -7,12 +7,10 @@ import { alert } from '@/utils/alert';
 
 export async function setupTauriListener(pinia: Pinia) {
     const userStore = useUserStore(pinia)
-
     /* 循环进行网络状态更新 */
     await listen<NetworkStatus>(MsgType.PING, (event) => userStore.ping(event.payload));
-
-    /* 某个钱包余额发生变化 */
-    listen<WalletInfo>(MsgType.BALANCE_CHANGE, (event) => userStore.updateWallet(event.payload));
+    /* 全部钱包更新 */
+    listen<WalletInfo>(MsgType.REFRESH_WALLET, (event) => userStore.updateWallet(event.payload));
 
     /* 监听后端通知 */
     await listen(MsgType.NOTICE, (event) => {

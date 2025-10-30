@@ -21,7 +21,7 @@ export const useUserStore = defineStore('app', {
         },
         addWallet(wallet: WalletInfo) {
             this.wallets.push(wallet)
-        }
+        },
     },
     persist: true
 })
