@@ -159,5 +159,6 @@ impl Wallet {
         self.balance = Some(new_balance);
         let repo = WalletRepository::new();
         repo.update(self.clone());
+        notice::msg(MsgType::BalanceChange, &self);
     }
 }
