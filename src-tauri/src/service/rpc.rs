@@ -29,15 +29,23 @@ pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
         transfer_amount,
     );
 
-    transfer_record("开始转账..");
+    transfer_record("正在构建转账方法..");
     let blockhash_result = client.get_latest_blockhash().map_err(|e| e.to_string());
     let blockhash = try_notice!(blockhash_result);
     transfer_record(&format!("获取到最新区块:{}", blockhash));
-
     let mut transaction =
         Transaction::new_with_payer(&[transfer_instruction], Some(&sender.pubkey()));
     transaction.sign(&[&sender], blockhash);
     transfer_record("交易命令构建完成..");
+    let fee_result = client
+        .get_fee_for_message(transaction.message())
+        .map_err(|e| e.to_string());
+    let fee = try_notice!(fee_result);
+    transfer_record(&format!(
+        "预计手续费: {} lamports (~{} SOL)",
+        fee,
+        fee as f32 / LAMPORTS_PER_SOL as f32
+    ));
     transfer_record("开始上传交易数据..");
     let signature_result = client
         .send_and_confirm_transaction(&transaction)
