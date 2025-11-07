@@ -7,11 +7,21 @@ mod repository;
 mod service;
 mod utils;
 
+use std::env;
+
 use crate::{db::connection::establish_connection, service::notice::APP_HANDLE};
 
 #[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 async fn main() {
+    // 自动切换当前目录为可执行文件所在路径
+    if let Ok(exe_path) = env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            env::set_current_dir(exe_dir).expect("❌ Failed to set current dir");
+        }
+    }
+
+    // 初始化数据库
     establish_connection();
 
     tauri::Builder::default()
@@ -28,7 +38,6 @@ async fn main() {
         ])
         .setup(|app| {
             APP_HANDLE.set(app.handle().clone()).unwrap();
-            // PING
             service::network_monitor::start_monitor();
             Ok(())
         })

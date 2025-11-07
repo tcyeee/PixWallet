@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
@@ -10,12 +9,10 @@ use crate::{
 };
 use chrono::Local;
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
-use solana_sdk::signature::Signature;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{
     native_token::LAMPORTS_PER_SOL, pubkey::Pubkey, signature::Keypair, signer::Signer,
 };
-use solana_transaction_status_client_types::UiTransactionEncoding;
 
 pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
     // [校验] 如果收款账户无法解析则提示
@@ -135,14 +132,14 @@ pub fn get_public_key_by_str(public_key_str: &str) -> Result<Pubkey, String> {
         .map_err(|e| format!("无效的公钥 ({}): {}", public_key_str, e))
 }
 
-pub fn transfer_detail(
-    signature: &str,
-) -> Result<solana_transaction_status_client_types::EncodedConfirmedTransactionWithStatusMeta, String>
-{
-    println!("{}", signature);
-    let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Devnet);
-    let sig = Signature::from_str(signature).map_err(|e| e.to_string())?;
-    client
-        .get_transaction(&sig, UiTransactionEncoding::Json)
-        .map_err(|e| e.to_string())
-}
+// pub fn transfer_detail(
+//     signature: &str,
+// ) -> Result<solana_transaction_status_client_types::EncodedConfirmedTransactionWithStatusMeta, String>
+// {
+//     println!("{}", signature);
+//     let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Devnet);
+//     let sig = Signature::from_str(signature).map_err(|e| e.to_string())?;
+//     client
+//         .get_transaction(&sig, UiTransactionEncoding::Json)
+//         .map_err(|e| e.to_string())
+// }
