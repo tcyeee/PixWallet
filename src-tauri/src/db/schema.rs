@@ -6,7 +6,7 @@ pub const CREATE_WALLET_TABLE: &str = "
         network TEXT NOT NULL,
         balance INTEGER DEFAULT 0,
         alias TEXT,
-        create_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
         updated_at INTEGER
     );
 ";

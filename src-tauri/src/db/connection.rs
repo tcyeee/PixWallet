@@ -1,13 +1,19 @@
 use super::schema::TABLES;
 use once_cell::sync::OnceCell;
 use rusqlite::{Connection, Result};
-use std::sync::{Arc, Mutex};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 pub static DB_CONN: OnceCell<Arc<Mutex<Connection>>> = OnceCell::new();
 
-pub fn establish_connection() {
+pub fn establish_connection(path: PathBuf) {
+    std::fs::create_dir_all(&path).expect("Failed to create directory");
+    let db_path = path.join("wallet.db");
+
     // 初始化数据库
-    let conn: Connection = Connection::open("wallet.db").unwrap();
+    let conn: Connection = Connection::open(&db_path).expect("Failed to open database");
     init_tables(&conn).expect("Failed to initialize database tables");
     println!("✅ Database initialized successfully!");
 

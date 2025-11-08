@@ -1,5 +1,5 @@
 [package]
-name = "pix_wallet"
+name = "pix-wallet"
 version = "0.1.0"
 description = "PixelSol is a pixel-art-inspired Solana wallet built with Tauri, designed to provide a lightweight and secure experience. It supports both macOS and Windows, allowing users to manage their SOL assets seamlessly across desktop platforms."
 authors = ["Tcyeee"]
@@ -15,14 +15,13 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri = { version = "2.9.2", features = [] }
+tauri-plugin-opener = "2.5.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 solana-sdk = "3.0.0"
 solana-client = "3.0.0"
 solana-system-interface = "2.0.0"
-solana-transaction-status-client-types = "3.0.8"
 bs58 = "0.5.0"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
 tokio = "1.48.0"

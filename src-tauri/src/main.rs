@@ -8,12 +8,12 @@ mod service;
 mod utils;
 
 use crate::{db::connection::establish_connection, service::notice::APP_HANDLE};
+use std::env;
+use tauri::Manager;
 
 #[tokio::main]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 async fn main() {
-    establish_connection();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -27,8 +27,12 @@ async fn main() {
             service::wallet::transfer_detail,
         ])
         .setup(|app| {
+            // 初始化数据库
+            let path = app.path().app_data_dir().unwrap();
+            establish_connection(path);
+            // 全局数据库连接 & 全局通知调用
             APP_HANDLE.set(app.handle().clone()).unwrap();
-            // PING
+            // 开启网络监控
             service::network_monitor::start_monitor();
             Ok(())
         })
