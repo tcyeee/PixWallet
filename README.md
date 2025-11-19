@@ -3,9 +3,9 @@
 
 # Introduction
 
-![1](./public/pic/readme_1.png)
-
 PixWallet is a pixel-art-inspired Solana wallet built with Tauri, designed to provide a lightweight and secure experience. It supports both macOS and Windows, allowing users to manage their SOL assets seamlessly across desktop platforms.
+
+![1](./public/pic/readme_1.png)
 
 # Getting Started
 
