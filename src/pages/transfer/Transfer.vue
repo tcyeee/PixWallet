@@ -1,10 +1,7 @@
 <template>
-  <div class="text-9xl font-bold text-gray-300">Transfer</div>
-  <button class="btn mb-5" @click="NAV.Home()">Return</button>
-
+  <ReturnButton />
   <div class="flex justify-between">
-
-    <div class="border p-5 border-gray-200 rounded-xl">
+    <div class="p-5">
       <fieldset class="fieldset ">
         <legend class="fieldset-legend">Select a payment account</legend>
         <select class="select w-full" v-model="params.from">
@@ -49,6 +46,7 @@ import { reactive, ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
 import { MsgType, TransferParams } from "@/models";
 import { listen } from "@tauri-apps/api/event";
+import ReturnButton from "@/components/ReturnButton.vue";
 
 const userStore = useUserStore();
 const walletSelectTip = "Pickup wallet";

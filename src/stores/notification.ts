@@ -7,7 +7,7 @@ export const useNotificationStore = defineStore('notification', {
             type: 'success' | 'error' | 'warning' | 'info'
             text: string
         }[],
-        maxMessages: 8
+        maxMessages: 4
     }),
     actions: {
         push(type: 'success' | 'error' | 'warning' | 'info', text: string) {

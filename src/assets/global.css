@@ -1,5 +1,31 @@
 @import "tailwindcss";
-
 @plugin "daisyui";
+@theme {
+  --color-pix-800: #C25A28;
+  --color-pix-500: #DF8B40;
+  --color-pix-300: #EDD7AA;
+  --color-pix-200: #F1DFB0;
 
+  --font-pix-primary: "PixPrimary", ui-sans-serif, system-ui, sans-serif;
+  --font-pix-secondary: "PixSecondary", ui-sans-serif, system-ui, sans-serif;
+}
 
+html, body, #app {
+  background: transparent;
+}
+
+@font-face {
+  font-family: "PixPrimary";
+  src: url("./fonts/Jersey10-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PixSecondary";
+  src: url("./fonts/Jersey25-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
