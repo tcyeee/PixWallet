@@ -1,28 +1,29 @@
 <template>
   <div>
     <div class="text-9xl font-bold text-pix-800 font-pix-primary">PixWallet</div>
-
     <div class="mt-[30px] flex justify-between font-pix-primary text-6xl text-pix-500 text-stroke">
-      <div class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+
+      <div @click="NAV.GoTo('wallet')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/wallet.png" class="w-[170px]">
         </div>
         <div>wallet</div>
       </div>
 
-      <div class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+      <div @click="NAV.GoTo('transfer')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/house.png" class="w-[150px]">
         </div>
         <div>transfer</div>
       </div>
 
-      <div class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+      <div @click="loading()" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/box.png" class="w-[150px]">
         </div>
         <div>receive</div>
       </div>
+
     </div>
     <div class="fixed bottom-3 left-0 w-full px-[20px] font-pix-primary justify-center flex">
       <div class="flex items-center">
@@ -34,12 +35,16 @@
         <NetworkMonitor />
       </div>
     </div>
-    <!-- <WalletList class="mt-5" /> -->
   </div>
 </template>
 <script setup>
-import WalletList from "@/pages/wallet/List.vue";
 import NetworkMonitor from "./components/NetworkMonitor.vue";
+import NAV from "@/router";
+import { notify } from "@/utils/notify";
+
+function loading() {
+  notify.info("This feature is under development, please stay tuned!");
+}
 </script>
 
 <style scoped>

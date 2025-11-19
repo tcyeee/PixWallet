@@ -7,7 +7,6 @@
       <span v-if="userStore.loading.refresh" class="loading loading-spinner"></span>
       Refresh Balance
     </button>
-    <button type="submit" class="btn btn-primary" @click="NAV.GoTo('transfer')">Transfer</button>
   </div>
   <table class="table m-w-[300px]">
     <thead>
