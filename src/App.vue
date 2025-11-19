@@ -1,5 +1,5 @@
 <template>
-  <div class="select-none h-screen rounded-[15px] bg-pix-500 p-[10px]">
+  <div class="select-none h-screen rounded-[15px] bg-pix-500 p-[10px] overflow-hidden">
     <div class="bg-pix-300 rounded-[10px] h-full p-5">
       <main class="">
         <router-view></router-view>

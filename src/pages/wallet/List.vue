@@ -19,7 +19,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(item,index) in userStore.wallets" :key="item.public_key" @click="NAV.GoTo('wallet', item)">
+      <tr v-for="(item,index) in userStore.wallets" :key="item.public_key" @click="NAV.GoTo('wallet-item', item)">
         <th>{{ index+1 }}</th>
         <td>{{ item.alias || 'None' }}</td>
         <td>{{ item.public_key }}</td>
