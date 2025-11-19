@@ -40,7 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
