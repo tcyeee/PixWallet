@@ -7,7 +7,7 @@ use {
 
 pub static APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, PartialEq)]
 pub enum MsgType {
     Ping,
     BalanceRefreshEnd,
@@ -81,7 +81,12 @@ pub fn show(notice_type: NoticeType, content: &str) {
 
 pub fn print<S: Serialize + Clone>(msg_type: &MsgType, msg: &S) {
     match serde_json::to_string(&msg) {
-        Ok(json) => println!("MSG:{:?} :: {}", msg_type, json),
+        Ok(json) => {
+            if msg_type == &MsgType::Ping {
+                return;
+            }
+            println!("MSG:{:?} :: {}", msg_type, json)
+        }
         Err(_) => println!("无法序列化消息内容"),
     }
 }

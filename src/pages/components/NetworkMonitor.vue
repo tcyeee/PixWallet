@@ -1,10 +1,10 @@
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 font-pix-primary">
     <div class="inline-grid *:[grid-area:1/1]">
       <div v-if="userStore.network?.status && userStore.network.status != NetworkHealth.LOST" class="status status-lg animate-ping" :class="[statusColor]"></div>
       <div class="status status-lg" :class="[statusColor]"></div>
     </div>
-    <div class="text-gray-400 text-sm" :class="[textColor]">
+    <div class="text-gray-400 text-lg mt-0.5" :class="[textColor]">
       <div v-if="userStore.network.ping">{{ userStore.network.ping + 'ms' }}</div>
       <div v-else class="text-gray-400">loading...</div>
     </div>

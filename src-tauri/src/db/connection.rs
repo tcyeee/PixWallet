@@ -11,6 +11,7 @@ pub static DB_CONN: OnceCell<Arc<Mutex<Connection>>> = OnceCell::new();
 pub fn establish_connection(path: PathBuf) {
     std::fs::create_dir_all(&path).expect("Failed to create directory");
     let db_path = path.join("wallet.db");
+    println!("📁 Database full path: {}", db_path.display());
 
     // 初始化数据库
     let conn: Connection = Connection::open(&db_path).expect("Failed to open database");
