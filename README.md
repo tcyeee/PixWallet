@@ -1,4 +1,4 @@
-![1](./public/pic/header.png)
+![1](./public/pic/header_2.png)
 
 
 # Introduction
