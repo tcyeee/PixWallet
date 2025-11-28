@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="$attrs" class="flex gap-2 mb-6">
+  <!-- <div v-bind="$attrs" class="flex gap-2 mb-6">
     <button type="submit" class="btn btn-primary" @click="createWallet()">
       <span v-if="loadingCreateWallet" class="loading loading-spinner"></span>
       Create wallet</button>
@@ -7,7 +7,7 @@
       <span v-if="userStore.loading.refresh" class="loading loading-spinner"></span>
       Refresh Balance
     </button>
-  </div>
+  </div> -->
 
   <!-- 拟物风格的银行卡列表（最多 5 张） -->
   <div class="relative w-[360px] max-w-full h-[220px] mt-2">
@@ -24,21 +24,26 @@
       @click="slot && NAV.GoTo('wallet-item', slot)"
     >
       <template v-if="slot">
-        <div class="flex justify-between items-center text-sm opacity-90">
-          <span class="font-semibold">
-            {{ slot.alias || '未命名钱包' }}
-          </span>
-        </div>
-        <div class="mt-4 text-[1.4rem] font-bold tracking-wide">
-          {{ lamportsToSol(slot.balance) }} SOL
-        </div>
-        <div class="font-mono text-[0.95rem] tracking-[0.15em] mt-2.5 opacity-90">
-          {{ formatCardNumber(slot.public_key) }}
+        <div class="flex justify-between items-center">
+          <div class="font-mono text-[0.95rem] tracking-[0.15em] opacity-90">
+            {{ formatCardNumber(slot.public_key) }}
+          </div>
+          <div class="text-[1.4rem] font-bold tracking-wide">
+            <span class="text-orange-400">{{ lamportsToSol(slot.balance) }}</span> 
+            <span class="text-xs text-gray-400"> SOL</span>
+          </div>
         </div>
       </template>
       <template v-else>
-        <div class="w-full h-full flex items-center justify-center text-[0.95rem] text-white/70">
-          空卡槽
+        <div class="">
+          <button
+            class="btn btn-sm btn-primary text-white"
+            :disabled="loadingCreateWallet"
+            @click.stop="createWallet()"
+          >
+            <span v-if="loadingCreateWallet" class="loading loading-spinner loading-xs"></span>
+            <span v-else>Create wallet</span>
+          </button>
         </div>
       </template>
     </div>
@@ -89,7 +94,7 @@ listen<null>(MsgType.BALANCE_REFRESH_END, () => {
 // 拟物卡片样式：根据索引做位移与层级，形成叠放效果
 function getCardStyle(index: number) {
   return {
-    transform: `translateY(${index * 50}px) translateX(${index * 0}px)`,
+    transform: `translateY(${index * 60}px) translateX(${index * 0}px)`,
   };
 }
 
@@ -98,7 +103,7 @@ function formatCardNumber(pubkey: string) {
   if (!pubkey) return "";
   const head = pubkey.slice(0, 4);
   const tail = pubkey.slice(-4);
-  return `${head} •••• •••• ${tail}`;
+  return `${head} •••• ${tail}`;
 }
 </script>
 
@@ -110,7 +115,7 @@ function formatCardNumber(pubkey: string) {
   width: 100%;
   height: 180px;
   border-radius: 18px;
-  padding: 18px 20px;
+  padding: 10px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
