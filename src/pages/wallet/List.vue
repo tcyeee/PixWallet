@@ -14,7 +14,7 @@
     <div
       v-for="(slot, index) in cardSlots"
       :key="index"
-      class="wallet-card absolute top-0 left-0 w-full h-[180px] rounded-[18px] p-[18px_20px] flex flex-col justify-between backdrop-blur-sm transition-all duration-200 ease-in-out text-[#f5f7fa]"
+      class="wallet-card"
       :class="{
         'bg-gradient-to-br from-[#1b2735] to-[#283e51]': slot,
         'bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] opacity-25 shadow-none': !slot,
@@ -103,6 +103,24 @@ function formatCardNumber(pubkey: string) {
 </script>
 
 <style scoped>
+.wallet-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(4px);
+  transition-property: all;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+  color: #f5f7fa;
+}
+
 /* 为拟物风格卡片添加内阴影效果（仅非空卡片） */
 .wallet-card:not(.opacity-25) {
   box-shadow:
