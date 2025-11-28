@@ -12,27 +12,27 @@
   <!-- 拟物风格的银行卡列表（最多 5 张） -->
   <div class="wallet-cards-wrapper">
     <div
-      v-for="i in 5"
-      :key="i"
+      v-for="(slot, index) in cardSlots"
+      :key="index"
       class="wallet-card"
       :class="{
-        'wallet-card--empty': !userStore.wallets[i - 1],
-        'cursor-pointer': userStore.wallets[i - 1]
+        'wallet-card--empty': !slot,
+        'cursor-pointer': slot
       }"
-      :style="getCardStyle(i)"
-      @click="userStore.wallets[i - 1] && NAV.GoTo('wallet-item', userStore.wallets[i - 1])"
+      :style="getCardStyle(index)"
+      @click="slot && NAV.GoTo('wallet-item', slot)"
     >
-      <template v-if="userStore.wallets[i - 1]">
+      <template v-if="slot">
         <div class="wallet-card__header">
           <span class="wallet-card__alias">
-            {{ userStore.wallets[i - 1].alias || '未命名钱包' }}
+            {{ slot.alias || '未命名钱包' }}
           </span>
         </div>
         <div class="wallet-card__balance">
-          {{ lamportsToSol(userStore.wallets[i - 1].balance) }} SOL
+          {{ lamportsToSol(slot.balance) }} SOL
         </div>
         <div class="wallet-card__number">
-          {{ formatCardNumber(userStore.wallets[i - 1].public_key) }}
+          {{ formatCardNumber(slot.public_key) }}
         </div>
       </template>
       <template v-else>
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { MsgType } from "@/models";
 import { lamportsToSol } from "@/utils/common";
@@ -54,6 +54,18 @@ import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
+
+// 卡槽数据：固定 5 个，空卡槽排在前面，真实钱包排在后面
+const cardSlots = computed(() => {
+  const maxSlots = 5;
+  const wallets = userStore.wallets || [];
+
+  const rawSlots = Array.from({ length: maxSlots }, (_, i) => wallets[i] || null);
+  const empties = rawSlots.filter((s) => !s);
+  const filled = rawSlots.filter((s) => !!s);
+
+  return [...empties, ...filled];
+});
 
 // 创建钱包
 const loadingCreateWallet = ref(false);
@@ -74,11 +86,9 @@ listen<null>(MsgType.BALANCE_REFRESH_END, () => {
 });
 
 // 拟物卡片样式：根据索引做位移与层级，形成叠放效果
-function getCardStyle(i: number) {
-  const index = i - 1;
+function getCardStyle(index: number) {
   return {
-    transform: `translateY(${index * 10}px) translateX(${index * 8}px)`,
-    zIndex: String(10 - index),
+    transform: `translateY(${index * 50}px) translateX(${index * 0}px)`,
   };
 }
 
