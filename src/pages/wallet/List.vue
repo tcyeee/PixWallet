@@ -20,7 +20,32 @@
 
     <!-- 右侧显示用户的总余额，总余额等于用户所有银行卡片的余额之和 -->
     <div class="total-balance-card">
-      <div class="text-gray-400 text-sm mb-2">总余额</div>
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-gray-400 text-sm">总余额</div>
+        <button
+          class="btn btn-sm btn-ghost text-gray-400 hover:text-white p-1 min-h-0 h-auto"
+          :disabled="userStore.loading.refresh"
+          @click="refreshBalance()"
+          title="刷新余额"
+        >
+          <span v-if="userStore.loading.refresh" class="loading loading-spinner loading-xs"></span>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+            />
+          </svg>
+        </button>
+      </div>
       <div class="flex items-baseline gap-2">
         <span class="text-orange-400 text-4xl font-bold tracking-wide">
           {{ totalBalance }}
