@@ -9,43 +9,27 @@
     </button>
   </div> -->
 
-  <!-- 拟物风格的银行卡列表（最多 5 张） -->
-  <div class="relative w-[360px] max-w-full h-[220px] mt-2">
-    <div
-      v-for="(slot, index) in cardSlots"
-      :key="index"
-      class="wallet-card"
-      :class="{
-        'bg-gradient-to-br from-[#1b2735] to-[#283e51]': slot,
-        'bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] opacity-25 shadow-none': !slot,
-        'cursor-pointer': slot
-      }"
-      :style="getCardStyle(index)"
-      @click="slot && NAV.GoTo('wallet-item', slot)"
-    >
-      <template v-if="slot">
-        <div class="flex justify-between items-center">
-          <div class="font-mono text-[0.95rem] tracking-[0.15em] opacity-90">
-            {{ formatCardNumber(slot.public_key) }}
-          </div>
-          <div class="text-[1.4rem] font-bold tracking-wide">
-            <span class="text-orange-400">{{ lamportsToSol(slot.balance) }}</span> 
-            <span class="text-xs text-gray-400"> SOL</span>
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <div class="">
-          <button
-            class="btn btn-sm btn-primary text-white"
-            :disabled="loadingCreateWallet"
-            @click.stop="createWallet()"
-          >
-            <span v-if="loadingCreateWallet" class="loading loading-spinner loading-xs"></span>
-            <span v-else>Create wallet</span>
-          </button>
-        </div>
-      </template>
+  <div class="flex gap-8 items-start">
+    <!-- 左侧卡片列表 -->
+    <WalletCardList
+      :card-slots="cardSlots"
+      :loading-create-wallet="loadingCreateWallet"
+      @card-click="NAV.GoTo('wallet-item', $event)"
+      @create-wallet="createWallet()"
+    />
+
+    <!-- 右侧显示用户的总余额，总余额等于用户所有银行卡片的余额之和 -->
+    <div class="total-balance-card">
+      <div class="text-gray-400 text-sm mb-2">总余额</div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-orange-400 text-4xl font-bold tracking-wide">
+          {{ totalBalance }}
+        </span>
+        <span class="text-gray-400 text-lg">SOL</span>
+      </div>
+      <div class="mt-4 text-gray-500 text-xs">
+        共 {{ walletCount }} 个钱包
+      </div>
     </div>
   </div>
 </template>
@@ -54,10 +38,11 @@
 import { ref, computed } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { MsgType } from "@/models";
-import { lamportsToSol } from "@/utils/common";
 import API from "@/api";
 import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
+import WalletCardList from "@/components/WalletCardList.vue";
+import { lamportsToSol } from "@/utils/common";
 
 const userStore = useUserStore();
 
@@ -71,6 +56,18 @@ const cardSlots = computed(() => {
   const filled = rawSlots.filter((s) => !!s);
 
   return [...empties, ...filled];
+});
+
+// 计算总余额：所有钱包余额之和
+const totalBalance = computed(() => {
+  const wallets = userStore.wallets || [];
+  const totalLamports = wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
+  return lamportsToSol(totalLamports);
+});
+
+// 钱包数量
+const walletCount = computed(() => {
+  return userStore.wallets?.length || 0;
 });
 
 // 创建钱包
@@ -90,50 +87,24 @@ function refreshBalance() {
 listen<null>(MsgType.BALANCE_REFRESH_END, () => {
   userStore.loading.refresh = false;
 });
-
-// 拟物卡片样式：根据索引做位移与层级，形成叠放效果
-function getCardStyle(index: number) {
-  return {
-    transform: `translateY(${index * 60}px) translateX(${index * 0}px)`,
-  };
-}
-
-// 卡号展示：取公钥前后几位，模拟银行卡号
-function formatCardNumber(pubkey: string) {
-  if (!pubkey) return "";
-  const head = pubkey.slice(0, 4);
-  const tail = pubkey.slice(-4);
-  return `${head} •••• ${tail}`;
-}
 </script>
 
 <style scoped>
-.wallet-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 180px;
+.total-balance-card {
+  background: linear-gradient(135deg, #1b2735 0%, #283e51 100%);
   border-radius: 18px;
-  padding: 10px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  backdrop-filter: blur(4px);
-  transition-property: all;
-  transition-duration: 200ms;
-  transition-timing-function: ease-in-out;
-  color: #f5f7fa;
-}
-
-/* 为拟物风格卡片添加内阴影效果（仅非空卡片） */
-.wallet-card:not(.opacity-25) {
+  padding: 24px 32px;
+  min-width: 200px;
   box-shadow:
     0 14px 30px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: #f5f7fa;
+  transition-property: all;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
 }
 
-.wallet-card:not(.opacity-25):hover {
+.total-balance-card:hover {
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
