@@ -18,8 +18,8 @@
           <div class="font-mono text-[0.95rem] tracking-[0.15em] opacity-90">
             {{ formatCardNumber(slot.public_key) }}
           </div>
-          <div class="text-[1.4rem] font-bold tracking-wide">
-            <span class="text-orange-400">{{ lamportsToSol(slot.balance) }}</span> 
+          <div class="text-[1.4rem] font-bold tracking-wide font-pix-primary">
+            <span class="text-orange-400 text-3xl">{{ lamportsToSol(slot.balance) }}</span> 
             <span class="text-xs text-gray-400"> SOL</span>
           </div>
         </div>

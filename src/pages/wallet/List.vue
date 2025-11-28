@@ -21,13 +21,11 @@
     <!-- 右侧显示用户的总余额，总余额等于用户所有银行卡片的余额之和 -->
     <div class="total-balance-card">
       <div class="flex items-center justify-between mb-2">
-        <div class="text-gray-400 text-sm">总余额</div>
+        <div class="text-gray-400 text-sm">SUM</div>
         <button
           class="btn btn-sm btn-ghost text-gray-400 hover:text-white p-1 min-h-0 h-auto"
           :disabled="userStore.loading.refresh"
-          @click="refreshBalance()"
-          title="刷新余额"
-        >
+          @click="refreshBalance()">
           <span v-if="userStore.loading.refresh" class="loading loading-spinner loading-xs"></span>
           <svg
             v-else
@@ -47,13 +45,13 @@
         </button>
       </div>
       <div class="flex items-baseline gap-2">
-        <span class="text-orange-400 text-4xl font-bold tracking-wide">
+        <span class="text-orange-400 text-5xl font-bold tracking-wide font-pix-primary">
           {{ totalBalance }}
         </span>
-        <span class="text-gray-400 text-lg">SOL</span>
+        <span class="text-gray-400 text-lg font-pix-secondary">SOL</span>
       </div>
       <div class="mt-4 text-gray-500 text-xs">
-        共 {{ walletCount }} 个钱包
+        Total {{ walletCount }} wallets
       </div>
     </div>
   </div>
