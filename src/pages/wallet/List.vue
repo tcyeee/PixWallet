@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { MsgType } from "@/models";
 import { lamportsToSol } from "@/utils/common";
@@ -42,10 +42,6 @@ import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
-
-onMounted(async () => {
-  userStore.updateWallets();
-});
 
 // 创建钱包
 const loadingCreateWallet = ref(false);
