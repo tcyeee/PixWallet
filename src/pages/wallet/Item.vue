@@ -64,14 +64,20 @@
           </tr>
         </tbody>
       </table>
+      <div class="flex justify-between mt-4">
+      <button class="btn" :disabled="page === 1" @click="prevPage">上一页</button>
+      <span>第 {{ page }} 页 / 共 {{ totalPages }} 页</span>
+      <button class="btn" :disabled="page === totalPages" @click="nextPage">下一页</button>
+    </div>
+
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed} from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
-import { AccountHistory, MsgType } from "@/models";
+import { AccountHistory, MsgType} from "@/models";
 import { formatRelativeTime, lamportsToSol } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
@@ -82,17 +88,35 @@ import ReturnButton from "@/components/ReturnButton.vue";
 const route = useRoute();
 const walletInfo = route.query;
 
+
+
 onMounted(() => {
   dataInit();
 });
 
 var list = ref<AccountHistory[]>([]);
+const page = ref(1);
+const pageSize = ref(30);
+const total = ref(0);
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
+
+
+// function dataInit() {
+//   if (!walletInfo || !walletInfo.public_key) return;
+//   API.WalletHistory(String(walletInfo.public_key)).then((res) => {
+//     list.value = res || [];
+//   });
+// }
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
-  API.WalletHistory(String(walletInfo.public_key)).then((res) => {
-    list.value = res || [];
+  
+
+  API.WalletHistory(String(walletInfo.public_key), page.value, pageSize.value).then((res) => {
+    list.value = res.list || [];
+    total.value = res.total;
   });
 }
+
 
 const alias = ref("");
 function changeAlias() {
@@ -102,6 +126,21 @@ function changeAlias() {
   };
   API.WalletAliasUpdate(params);
 }
+
+function nextPage() {
+  if (page.value < totalPages.value) {
+    page.value++;
+    dataInit();
+  }
+}
+
+function prevPage() {
+  if (page.value > 1) {
+    page.value--;
+    dataInit();
+  }
+}
+
 
 async function copy(content: string) {
   try {

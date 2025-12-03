@@ -23,6 +23,19 @@ pub enum Status {
     Confirmed,
     Finalized,
 }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HistoryQuery {
+    pub public_key: String,
+    pub page: usize,
+    pub page_size: usize
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PaginatedHistory {
+    pub total: usize,        // 总记录数
+    pub list: Vec<History>,  // 当前页记录
+}
+
 
 impl FromStr for Status {
     type Err = String;

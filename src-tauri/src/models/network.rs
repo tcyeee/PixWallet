@@ -15,7 +15,7 @@ impl SolanaNetwork {
             SolanaNetwork::Mainnet => "https://api.mainnet-beta.solana.com",
             SolanaNetwork::Testnet => "https://api.testnet.solana.com",
             SolanaNetwork::Devnet => "https://api.devnet.solana.com",
-            SolanaNetwork::Local => "http://127.0.0.1:8899",
+            SolanaNetwork::Local => "http://192.168.187.135:8899",
         }
     }
 

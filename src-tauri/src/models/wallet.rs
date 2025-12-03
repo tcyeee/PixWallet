@@ -1,6 +1,7 @@
 use crate::service::notice;
 use crate::{
     models::network::SolanaNetwork,
+    models::history::History,
     repository::wallet_repo::WalletRepository,
     service::notice::{msg, show, MsgType, NoticeType},
 };
@@ -28,6 +29,13 @@ pub struct Wallet {
     pub updated_at: Option<i64>,
     pub created_at: Option<i64>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaginatedHistoryList {
+    pub total: usize,
+    pub list: Vec<History>,
+}
+
 
 impl Wallet {
     pub fn insert(&self, repo: &WalletRepository) -> Result<(), rusqlite::Error> {
@@ -68,7 +76,7 @@ impl Wallet {
             return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
         }
         // 如果没有指定网络，默认使用 Devnet
-        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Devnet);
+        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Local);
         // 生成新的密钥对
         let keypair: Keypair = Keypair::new();
         // 获取公钥
