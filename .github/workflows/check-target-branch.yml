@@ -1,0 +1,250 @@
+# Workflow 名称：检查 PR 目标分支和 Rust 代码质量
+# 此 workflow 会在 Pull Request 创建、更新或重新打开时自动运行
+name: Check PR target branch
+
+# 定义触发条件：当 PR 被创建、同步（有新提交）或重新打开时触发
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Job 1: 检查 PR 的目标分支是否为 main
+  # 确保所有 PR 都指向主分支，避免误操作
+  check-main:
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤 1: 验证 PR 的目标分支
+      # 获取 PR 的基础分支（target branch），如果不是 main 则报错并退出
+      - name: Verify PR target branch
+        run: |
+          echo "Target branch: ${{ github.event.pull_request.base.ref }}"
+          if [ "${{ github.event.pull_request.base.ref }}" != "main" ]; then
+            echo "Error: Pull requests must target the 'main' branch."
+            exit 1
+          fi
+
+  # Job 2: 检查 Rust 代码质量
+  # 并行运行，不依赖 check-main job 的结果
+  # 包括代码格式、编译检查和代码质量检查
+  check-rust:
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤 1: 检出代码到 runner
+      # 使用官方 checkout action，将仓库代码下载到工作目录
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 步骤 2: 设置 Rust 工具链
+      # 安装稳定版的 Rust 编译器，并安装 rustfmt（代码格式化工具）和 clippy（代码检查工具）
+      # 这些工具用于后续的代码格式检查和代码质量检查
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # 步骤 3: 缓存 Cargo 依赖和编译产物
+      # 缓存 Cargo 的注册表、依赖包和编译目标目录，以加速后续构建
+      # key 基于操作系统和 Cargo.lock 的哈希值，当依赖变化时缓存会失效
+      # restore-keys 用于部分匹配，即使 key 不完全匹配也能恢复部分缓存
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/              # Cargo 二进制文件
+            ~/.cargo/registry/index/   # Cargo 注册表索引
+            ~/.cargo/registry/cache/   # 下载的依赖包缓存
+            ~/.cargo/git/db/           # Git 依赖的数据库
+            src-tauri/target/          # Rust 编译产物目录
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # 步骤 4: 检查 Rust 代码格式
+      # 使用 cargo fmt --check 检查代码是否符合 Rust 标准格式
+      # continue-on-error: true 表示即使此步骤失败，后续步骤仍会继续执行
+      # 这样可以收集所有检查的错误信息，而不是遇到第一个错误就停止
+      - name: Check Rust code formatting
+        id: fmt-check  # 给步骤设置 ID，后续可以通过 steps.fmt-check.outcome 引用此步骤的结果
+        working-directory: src-tauri  # 在 src-tauri 目录下执行命令
+        continue-on-error: true  # 即使失败也继续执行后续步骤
+        run: |
+          # 将检查标题写入 GitHub Actions Summary（可在 Actions 页面查看）
+          echo "## 🔍 Code Formatting Check" >> $GITHUB_STEP_SUMMARY
+          # 运行 cargo fmt --check 检查格式
+          # --check 表示只检查不修改，--color=always 保持颜色输出
+          # 2>&1 将标准错误重定向到标准输出，tee 同时输出到终端和文件
+          if ! cargo fmt --check -- --color=always 2>&1 | tee fmt-output.txt; then
+            # 如果检查失败，将错误信息写入 Summary
+            echo "### ❌ Formatting Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat fmt-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "**Tip**: Run \`cargo fmt\` to automatically fix formatting issues" >> $GITHUB_STEP_SUMMARY
+            # 创建标记文件，用于后续步骤判断是否有格式错误
+            touch .fmt-failed
+            exit 1
+          else
+            # 检查通过，记录成功信息
+            echo "### ✅ Formatting Check Passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # 步骤 5: 检查 Rust 代码编译
+      # 使用 cargo check 检查代码是否能成功编译，但不生成可执行文件
+      # 比 cargo build 更快，因为不需要生成最终产物
+      - name: Check Rust compilation
+        id: compile-check  # 设置步骤 ID，用于后续引用
+        working-directory: src-tauri
+        continue-on-error: true  # 即使编译失败也继续执行后续检查
+        run: |
+          # 将编译检查标题写入 Summary
+          echo "## 🔨 Compilation Check" >> $GITHUB_STEP_SUMMARY
+          # 运行 cargo check 检查编译
+          # --all-targets 检查所有目标（库、二进制文件、测试、示例等）
+          # --message-format=short 使用简短格式输出，减少冗余信息
+          if ! cargo check --all-targets --message-format=short 2>&1 | tee compile-output.txt; then
+            # 编译失败，将错误信息写入 Summary
+            echo "### ❌ Compilation Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat compile-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "**Tip**: Please check and fix the compilation errors above" >> $GITHUB_STEP_SUMMARY
+            # 创建标记文件
+            touch .compile-failed
+            exit 1
+          else
+            # 编译成功
+            echo "### ✅ Compilation Check Passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # 步骤 6: 运行 Clippy 代码检查
+      # Clippy 是 Rust 的官方 linter，用于检查代码质量和常见错误
+      # 可以发现潜在 bug、性能问题、代码异味等
+      - name: Run Clippy linter
+        id: clippy-check  # 设置步骤 ID
+        working-directory: src-tauri
+        continue-on-error: true  # 即使有警告也继续执行
+        run: |
+          # 将 Clippy 检查标题写入 Summary
+          echo "## 🧹 Clippy Code Quality Check" >> $GITHUB_STEP_SUMMARY
+          # 运行 cargo clippy 进行代码质量检查
+          # --all-targets 检查所有目标
+          # --message-format=short 使用简短格式
+          # -- -D warnings 表示将所有警告视为错误（deny warnings）
+          # 这样可以确保代码没有任何警告才能通过检查
+          if ! cargo clippy --all-targets --message-format=short -- -D warnings 2>&1 | tee clippy-output.txt; then
+            # Clippy 检查失败，记录错误信息
+            echo "### ❌ Clippy Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat clippy-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "**Tip**: Please fix the warnings and errors above. Run \`cargo clippy --fix\` to automatically fix some issues" >> $GITHUB_STEP_SUMMARY
+            # 创建标记文件
+            touch .clippy-failed
+            exit 1
+          else
+            # Clippy 检查通过
+            echo "### ✅ Clippy Check Passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # 步骤 7: 在 PR 中评论错误信息
+      # 如果任何检查失败，自动在 PR 中添加评论，详细说明问题
+      # 这样贡献者可以直接在 PR 页面看到需要修复的问题，无需查看 Actions 日志
+      - name: Comment PR with errors
+        # if: always() 表示无论前面的步骤成功或失败都会执行
+        # 检查是否有任何步骤失败（格式、编译或 Clippy）
+        if: always() && (steps.fmt-check.outcome == 'failure' || steps.compile-check.outcome == 'failure' || steps.clippy-check.outcome == 'failure')
+        uses: actions/github-script@v7  # 使用 GitHub Script action 来调用 GitHub API
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动生成的 token 进行 API 调用
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            // 构建评论内容，使用 Markdown 格式
+            let comment = '## ❌ Rust Code Check Failed\n\n';
+            comment += 'Please fix the following issues and resubmit:\n\n';
+            let hasErrors = false;
+            
+            // 读取格式检查的错误输出文件
+            // 如果文件存在且有内容，将其添加到评论中
+            const fmtPath = path.join('src-tauri', 'fmt-output.txt');
+            if (fs.existsSync(fmtPath)) {
+              const fmtOutput = fs.readFileSync(fmtPath, 'utf8');
+              if (fmtOutput.trim()) {
+                hasErrors = true;
+                comment += '### 🔍 Code Formatting Issues\n';
+                comment += '```\n' + fmtOutput.trim() + '\n```\n';
+                comment += '**Fix**: Run `cargo fmt` to automatically fix formatting\n\n';
+              }
+            }
+            
+            // 读取编译错误输出文件
+            // 过滤输出，只保留包含错误或警告的行，减少冗余信息
+            const compilePath = path.join('src-tauri', 'compile-output.txt');
+            if (fs.existsSync(compilePath)) {
+              const compileOutput = fs.readFileSync(compilePath, 'utf8');
+              // 过滤掉不相关的输出，只保留错误信息
+              const errorLines = compileOutput.split('\n').filter(line => 
+                line.includes('error') || line.includes('Error') || line.includes('warning')
+              );
+              if (errorLines.length > 0) {
+                hasErrors = true;
+                comment += '### 🔨 Compilation Errors\n';
+                comment += '```\n' + errorLines.join('\n') + '\n```\n';
+                comment += '**Fix**: Please fix the code according to the error messages\n\n';
+              }
+            }
+            
+            // 读取 Clippy 错误输出文件
+            // 同样过滤输出，只保留警告和错误信息
+            const clippyPath = path.join('src-tauri', 'clippy-output.txt');
+            if (fs.existsSync(clippyPath)) {
+              const clippyOutput = fs.readFileSync(clippyPath, 'utf8');
+              // 过滤出警告和错误
+              const errorLines = clippyOutput.split('\n').filter(line => 
+                line.includes('error') || line.includes('warning') || line.includes('Error') || line.includes('Warning')
+              );
+              if (errorLines.length > 0) {
+                hasErrors = true;
+                comment += '### 🧹 Clippy Code Quality Issues\n';
+                comment += '```\n' + errorLines.join('\n') + '\n```\n';
+                comment += '**Fix**: Run `cargo clippy --fix` to automatically fix some issues\n\n';
+              }
+            }
+            
+            // 如果有任何错误，添加总结和快速修复命令
+            if (hasErrors) {
+              comment += '---\n';
+              comment += '💡 **Tip**: After fixing, resubmit your code and the checks will automatically run again.\n';
+              comment += '\n📋 **Quick Fix Commands**:\n';
+              comment += '```bash\n';
+              comment += 'cd src-tauri\n';
+              // 根据哪些检查失败，添加相应的修复命令
+              if (fs.existsSync(path.join('src-tauri', '.fmt-failed'))) {
+                comment += 'cargo fmt  # Fix formatting issues\n';
+              }
+              if (fs.existsSync(path.join('src-tauri', '.clippy-failed'))) {
+                comment += 'cargo clippy --fix  # Fix Clippy issues\n';
+              }
+              comment += '```\n';
+              
+              // 使用 GitHub API 在 PR 中添加评论
+              // context.issue.number 是 PR 的编号
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+      # 步骤 8: 如果任何检查失败，使整个 workflow 失败
+      # 这是最后一步，用于确保如果有任何检查失败，整个 workflow 会标记为失败
+      # 这样可以阻止有问题的代码被合并到主分支
+      - name: Fail if any check failed
+        # 检查是否有任何步骤失败
+        # 如果格式检查、编译检查或 Clippy 检查中任何一个失败，则执行此步骤
+        if: steps.fmt-check.outcome == 'failure' || steps.compile-check.outcome == 'failure' || steps.clippy-check.outcome == 'failure'
+        run: |
+          # 输出失败信息，提示查看详细错误和 PR 评论
+          echo "❌ Rust code check failed. Please check the detailed error messages above and the PR comment"
+          exit 1  # 退出码 1 表示失败，会使整个 workflow 标记为失败
