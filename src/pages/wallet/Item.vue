@@ -83,29 +83,18 @@
         </table>
 
         <!-- 分页 -->
-        <div class="flex justify-between items-center mt-4">
-          <button 
-            class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
-            :disabled="page === 1" 
-            @click="prevPage"
-          >
-            上一页
-          </button>
-          <span class="text-pix-800 font-pix-secondary">第 {{ page }} 页 / 共 {{ totalPages }} 页</span>
-          <button 
-            class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
-            :disabled="page === totalPages" 
-            @click="nextPage"
-          >
-            下一页
-          </button>
-        </div>
+        <Pagination 
+          :current-page="page" 
+          :total="total" 
+          :page-size="pageSize" 
+          @change="handlePageChange" 
+        />
       </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed} from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
 import { AccountHistory, MsgType} from "@/models";
@@ -115,38 +104,36 @@ import { notify } from "@/utils/notify";
 import TransferStatus from "../components/TransferStatus.vue";
 import WalletDelModal from "../components/WalletDelModal.vue";
 import ReturnButton from "@/components/ReturnButton.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const route = useRoute();
 const walletInfo = route.query;
 
 var list = ref<AccountHistory[]>([]);
+
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
+
+/** 获取查询参数 */
+const getQueryParams = () => ({
+  publicKey: String(walletInfo.public_key),
+  page: page.value,
+  pageSize: pageSize.value,
+});
 
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
-  
-
-  API.WalletHistory(String(walletInfo.public_key), page.value, pageSize.value).then((res) => {
+  const { publicKey, page: currentPage, pageSize: size } = getQueryParams();
+  API.WalletHistory(publicKey, currentPage, size).then((res) => {
     list.value = res.list || [];
     total.value = res.total;
   });
 }
 
-function nextPage() {
-  if (page.value < totalPages.value) {
-    page.value++;
-    dataInit();
-  }
-}
-
-function prevPage() {
-  if (page.value > 1) {
-    page.value--;
-    dataInit();
-  }
+function handlePageChange(newPage: number) {
+  page.value = newPage;
+  dataInit();
 }
 
 async function copy(content: string) {
