@@ -7,24 +7,23 @@
       <div class="ml-1">settings</div>
     </div>
 
-
-    <div class="mt-5 flex justify-between font-pix-primary text-6xl text-pix-500 text-stroke">
-
-      <div @click="NAV.GoTo('wallet')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+    <!-- 功能区域 -->
+    <div class="mt-5 flex gap-1 sm:gap-2 md:gap-4 lg:gap-7 w-full font-pix-primary text-6xl text-pix-500 text-stroke">
+      <div @click="NAV.GoTo('wallet')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 flex-1">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/wallet.png" class="w-[170px]">
         </div>
         <div>wallet</div>
       </div>
 
-      <div @click="NAV.GoTo('transfer')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+      <div @click="NAV.GoTo('transfer')" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 flex-1">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/house.png" class="w-[150px]">
         </div>
         <div>transfer</div>
       </div>
 
-      <div @click="loading()" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 inner-shadow">
+      <div @click="loading()" class="flex flex-col items-center bg-orange-300 rounded-2xl p-5 flex-1">
         <div class="w-[200px] h-[200px] flex items-center justify-center">
           <img src="/src/assets/pic/box.png" class="w-[150px]">
         </div>
@@ -61,7 +60,4 @@ function loading() {
   -webkit-text-stroke: 2px #b56035;
 }
 
-.inner-shadow {
-  box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
-}
 </style>
