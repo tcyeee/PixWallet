@@ -23,16 +23,6 @@
       <WalletDelModal :publicKey="String(walletInfo.public_key)" />
     </div>
 
-    <div class="space-y-2 mb-4">
-      <div class="flex items-center">
-        <span class="w-24 font-medium">Alias:</span>
-        <div class="flex gap-2 w-full">
-          <input type="text" class="input" placeholder="Type here" v-model="alias" />
-          <button class="btn" @click="changeAlias()">修改</button>
-        </div>
-      </div>
-    </div>
-
     <div class="overflow-x-auto">
       <table class="table table-xs table-fixed">
         <thead>
@@ -89,7 +79,6 @@ const route = useRoute();
 const walletInfo = route.query;
 
 
-
 onMounted(() => {
   dataInit();
 });
@@ -100,13 +89,6 @@ const pageSize = ref(30);
 const total = ref(0);
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
 
-
-// function dataInit() {
-//   if (!walletInfo || !walletInfo.public_key) return;
-//   API.WalletHistory(String(walletInfo.public_key)).then((res) => {
-//     list.value = res || [];
-//   });
-// }
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
   
@@ -115,16 +97,6 @@ function dataInit() {
     list.value = res.list || [];
     total.value = res.total;
   });
-}
-
-
-const alias = ref("");
-function changeAlias() {
-  const params = {
-    publicKey: walletInfo?.public_key,
-    newAlias: alias.value,
-  };
-  API.WalletAliasUpdate(params);
 }
 
 function nextPage() {
