@@ -1,14 +1,4 @@
 <template>
-  <!-- <div v-bind="$attrs" class="flex gap-2 mb-6">
-    <button type="submit" class="btn btn-primary" @click="createWallet()">
-      <span v-if="loadingCreateWallet" class="loading loading-spinner"></span>
-      Create wallet</button>
-    <button type="submit" class="btn btn-primary" :disabled="userStore.loading.refresh" @click="refreshBalance()">
-      <span v-if="userStore.loading.refresh" class="loading loading-spinner"></span>
-      Refresh Balance
-    </button>
-  </div> -->
-
   <div class="flex gap-8 items-start">
     <!-- 左侧卡片列表 -->
     <WalletCardList

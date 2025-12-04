@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { lamportsToSol } from "@/utils/common";
+import { lamportsToSol, formatCardNumber } from "@/utils/common";
 import type { WalletInfo } from "@/models";
 
 defineProps<{
@@ -59,14 +59,6 @@ function getCardStyle(index: number) {
   return {
     transform: `translateY(${index * 60}px) translateX(${index * 0}px)`,
   };
-}
-
-// 卡号展示：取公钥前后几位，模拟银行卡号
-function formatCardNumber(pubkey: string) {
-  if (!pubkey) return "";
-  const head = pubkey.slice(0, 4);
-  const tail = pubkey.slice(-4);
-  return `${head} •••• ${tail}`;
 }
 </script>
 

@@ -53,3 +53,15 @@ export function formatRelativeTime(timestamp: number, isSeconds: boolean = true)
         return formatTimestamp(timestamp, isSeconds);
     }
 }
+
+/**
+ * 卡号展示：取公钥前后几位，模拟银行卡号
+ * @param pubkey 公钥字符串
+ * @returns 格式化后的卡号字符串，例如 "xxxx •••• xxxx"
+ */
+export function formatCardNumber(pubkey: string): string {
+    if (!pubkey) return "";
+    const head = pubkey.slice(0, 4);
+    const tail = pubkey.slice(-4);
+    return `${head} •••• ${tail}`;
+}

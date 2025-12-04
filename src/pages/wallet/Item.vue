@@ -1,65 +1,106 @@
 <template>
   <ReturnButton />
-  <div class="h-screen overflow-y-scroll pb-[30vh]">
-    <div class="card bg-base-100 w-96 shadow-sm bg-gradient-to-r from-[#ff7e5f] to-[#feb47b] mt-10">
-      <div class="card-body">
-        <div class="flex gap-2 mb-5 items-center">
-          <div class="text-5xl text-green-800 font-bold">${{ lamportsToSol(Number(walletInfo.balance)) }}</div>
-          <div>
-            <div class="text-green-900">Sol</div>
-            <div class="bg-green-800/20 rounded px-2 text-xs text-green-700">{{ walletInfo.network }}</div>
-          </div>
+  <div class="p-5 h-screen overflow-y-scroll pb-[30vh]">
+    <!-- 钱包信息卡片 -->
+    <div class="wallet-info-card mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-baseline gap-2">
+          <span class="text-orange-400 text-5xl font-bold tracking-wide font-pix-primary">
+            {{ lamportsToSol(Number(walletInfo.balance)) }}
+          </span>
+          <span class="text-gray-400 text-lg font-pix-secondary">SOL</span>
         </div>
-
-        <div class="text-lg">{{ walletInfo.alias }}</div>
-
-        <div class="flex gap-2 items-center">
-          <div class=" truncate break-all text-sm  rounded bg-gray-900/10 text-gray-600 p-1">{{ walletInfo.public_key }}</div>
-          <button class="btn btn-neutral btn-dash btn-xs" @click="copy(String(walletInfo.public_key))">Copy</button>
+        <div class="bg-gray-800/30 rounded-lg px-3 py-1">
+          <div class="text-gray-300 text-xs font-pix-secondary">{{ walletInfo.network }}</div>
         </div>
       </div>
+
+      <div class="flex gap-2 items-center">
+        <div class="font-mono text-[0.95rem] tracking-[0.15em] opacity-90">
+          {{ formatCardNumber(String(walletInfo.public_key)) }}
+        </div>
+        <button class="btn btn-xs bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
+          @click="copy(String(walletInfo.public_key))" > Copy </button>
+      </div>
     </div>
-    <div class="mt-3 flex mb-10">
+
+    <!-- 删除钱包按钮 -->
+    <div class="mb-4">
       <WalletDelModal :publicKey="String(walletInfo.public_key)" />
     </div>
 
-    <div class="overflow-x-auto">
-      <table class="table table-xs table-fixed">
-        <thead>
-          <tr>
-            <th class="w-8"></th>
-            <th class="truncate min-w-64">SIGNATURE</th>
-            <th class="w-20">SLOT</th>
-            <th class="w-40">BLOCK TIME</th>
-            <th class="w-30">STATUS</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item,index) in list" :key="item.signature" @click="selectOne(item)">
-            <th>{{ index+1 }}</th>
-            <th class=" ">
-              <div class="flex gap-2">
-                <div class="truncate text-gray-500">{{ item.signature }}</div>
-                <button class="btn btn-neutral btn-dash btn-xs" @click.stop="copy(String(item.signature))">Copy</button>
-              </div>
-            </th>
-            <th>{{ item.slot }}</th>
-            <th>
-              <div v-if="item.new_flag" class="badge badge-xs badge-success">new</div>
-              {{ formatRelativeTime(item.block_time!) }}
-            </th>
-            <th :class="item.new_flag?'opacity-100':'opacity-80'">
-              <TransferStatus :status="item.confirmation_status" />
-            </th>
-          </tr>
-        </tbody>
-      </table>
-      <div class="flex justify-between mt-4">
-      <button class="btn" :disabled="page === 1" @click="prevPage">上一页</button>
-      <span>第 {{ page }} 页 / 共 {{ totalPages }} 页</span>
-      <button class="btn" :disabled="page === totalPages" @click="nextPage">下一页</button>
-    </div>
+    <!-- 交易历史卡片 -->
+    <div class="bg-pix-200 rounded-2xl p-5 mb-4">
+      <div class="flex items-center mb-4">
+        <div class="w-8 h-8 bg-pix-800 rounded-lg mr-3 flex items-center justify-center">
+          <div class="text-white text-xs font-pix-secondary">📋</div>
+        </div>
+        <div class="text-2xl font-pix-secondary text-pix-800">Transaction History</div>
+      </div>
 
+      <div class="overflow-x-auto">
+        <table class="table table-xs table-fixed w-full">
+          <thead>
+            <tr class="bg-pix-300">
+              <th class="w-8 text-pix-800 font-pix-secondary">#</th>
+              <th class="truncate min-w-64 text-pix-800 font-pix-secondary">SIGNATURE</th>
+              <th class="w-20 text-pix-800 font-pix-secondary">SLOT</th>
+              <th class="w-40 text-pix-800 font-pix-secondary">BLOCK TIME</th>
+              <th class="w-30 text-pix-800 font-pix-secondary">STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(item,index) in list" 
+              :key="item.signature" 
+              @click="selectOne(item)"
+              class="hover:bg-pix-300/50 cursor-pointer transition-colors"
+            >
+              <td class="text-pix-800 font-pix-secondary">{{ index+1 }}</td>
+              <td>
+                <div class="flex gap-2 items-center">
+                  <div class="truncate text-pix-800 font-mono text-xs">{{ item.signature }}</div>
+                  <button 
+                    class="btn btn-xs bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
+                    @click.stop="copy(String(item.signature))"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </td>
+              <td class="text-pix-800 font-pix-secondary">{{ item.slot }}</td>
+              <td class="text-pix-800 font-pix-secondary">
+                <div class="flex items-center gap-2">
+                  <div v-if="item.new_flag" class="badge badge-xs bg-green-500 text-white">new</div>
+                  <span>{{ formatRelativeTime(item.block_time!) }}</span>
+                </div>
+              </td>
+              <td :class="item.new_flag?'opacity-100':'opacity-80'">
+                <TransferStatus :status="item.confirmation_status" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 分页 -->
+        <div class="flex justify-between items-center mt-4">
+          <button 
+            class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
+            :disabled="page === 1" 
+            @click="prevPage"
+          >
+            上一页
+          </button>
+          <span class="text-pix-800 font-pix-secondary">第 {{ page }} 页 / 共 {{ totalPages }} 页</span>
+          <button 
+            class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
+            :disabled="page === totalPages" 
+            @click="nextPage"
+          >
+            下一页
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -68,7 +109,7 @@ import { ref, onMounted, onUnmounted, computed} from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
 import { AccountHistory, MsgType} from "@/models";
-import { formatRelativeTime, lamportsToSol } from "@/utils/common";
+import { formatRelativeTime, lamportsToSol, formatCardNumber } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
 import TransferStatus from "../components/TransferStatus.vue";
@@ -78,14 +119,9 @@ import ReturnButton from "@/components/ReturnButton.vue";
 const route = useRoute();
 const walletInfo = route.query;
 
-
-onMounted(() => {
-  dataInit();
-});
-
 var list = ref<AccountHistory[]>([]);
 const page = ref(1);
-const pageSize = ref(30);
+const pageSize = ref(10);
 const total = ref(0);
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
 
@@ -113,12 +149,10 @@ function prevPage() {
   }
 }
 
-
 async function copy(content: string) {
   try {
     await navigator.clipboard.writeText(content);
     notify.success("复制成功 ✅");
-    alert();
   } catch (err) {
     notify.error("Err");
     console.error(err);
@@ -127,6 +161,7 @@ async function copy(content: string) {
 
 let unlisten: (() => void) | null = null;
 onMounted(async () => {
+  dataInit();
   unlisten = await listen<Array<AccountHistory>>(
     MsgType.REFRESH_HISTORY,
     (res) => {
@@ -150,3 +185,18 @@ function selectOne(item: AccountHistory) {
   });
 }
 </script>
+
+<style scoped>
+.wallet-info-card {
+  background: linear-gradient(135deg, #1b2735 0%, #283e51 100%);
+  border-radius: 18px;
+  padding: 24px 32px;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: #f5f7fa;
+  transition-property: all;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+</style>
