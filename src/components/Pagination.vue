@@ -1,20 +1,27 @@
 <template>
-  <div class="flex justify-between items-center mt-4">
-    <button 
-      class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
-      :disabled="currentPage === 1" 
-      @click="handlePrev"
-    >
-      上一页
-    </button>
-    <span class="text-pix-800 font-pix-secondary">第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
-    <button 
-      class="btn bg-pix-800 hover:bg-pix-500 border-pix-800 text-white font-pix-secondary" 
-      :disabled="currentPage === totalPages || totalPages === 0" 
-      @click="handleNext"
-    >
-      下一页
-    </button>
+  <div class="flex justify-center items-center gap-4 mt-4">
+    <div class="join">
+      <button 
+        class="join-item btn btn-sm bg-pix-800 hover:bg-pix-500  text-white font-pix-secondary border-none" 
+        :disabled="currentPage === 1" 
+        @click="handlePrev"
+      >
+        «
+      </button>
+      <button 
+        class="join-item btn btn-sm bg-pix-800 text-white font-pix-secondary" 
+        disabled
+      >
+         {{ currentPage }} / {{ totalPages }} 
+      </button>
+      <button 
+        class="join-item btn btn-sm bg-pix-800 hover:bg-pix-500  text-white font-pix-secondary border-none" 
+        :disabled="currentPage === totalPages || totalPages === 0" 
+        @click="handleNext"
+      >
+        »
+      </button>
+    </div>
   </div>
 </template>
 
