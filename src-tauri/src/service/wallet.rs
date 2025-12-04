@@ -73,8 +73,14 @@ pub async fn transfer(params: TransferParams) -> Result<(), String> {
 pub async fn account_history(query: HistoryQuery) -> Result<PaginatedHistory, String> {
     let repo = HistoryRepository::new();
     let list = repo.list(&query.public_key, query.page, query.page_size);
-    // 获取总数
     let total = repo.count(&query.public_key).map_err(|e| e.to_string())?;
+
+    // 如果页码大于1,则无需查询线上历史。
+    if query.page > 1 {
+        return Ok(PaginatedHistory { total, list });
+    }
+
+    // 获取总数
     let list_clone = list.clone();
     tauri::async_runtime::spawn_blocking(move || {
         match history_update(&list_clone, &query.public_key, SolanaNetwork::Devnet) {

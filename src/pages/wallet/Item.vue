@@ -97,7 +97,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
-import { AccountHistory, MsgType} from "@/models";
+import { AccountHistory, MsgType, HistoryQuery } from "@/models";
 import { formatRelativeTime, lamportsToSol, formatCardNumber } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
@@ -116,16 +116,16 @@ const pageSize = ref(10);
 const total = ref(0);
 
 /** 获取查询参数 */
-const getQueryParams = () => ({
-  publicKey: String(walletInfo.public_key),
+const getQueryParams = (): HistoryQuery => ({
+  public_key: String(walletInfo.public_key),
   page: page.value,
-  pageSize: pageSize.value,
+  page_size: pageSize.value,
 });
 
 function dataInit() {
   if (!walletInfo || !walletInfo.public_key) return;
-  const { publicKey, page: currentPage, pageSize: size } = getQueryParams();
-  API.WalletHistory(publicKey, currentPage, size).then((res) => {
+
+  API.WalletHistory(getQueryParams()).then((res) => {
     list.value = res.list || [];
     total.value = res.total;
   });

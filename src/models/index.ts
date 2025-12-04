@@ -1,3 +1,9 @@
+export type HistoryQuery = {
+    public_key: string;
+    page: number;
+    page_size: number;
+}
+
 export type WalletInfo = {
     public_key: string;
     alias: string;
@@ -6,8 +12,8 @@ export type WalletInfo = {
 }
 
 export interface WalletHistoryResp {
-  list: AccountHistory[];
-  total: number;
+    list: AccountHistory[];
+    total: number;
 }
 
 export enum MsgType {
