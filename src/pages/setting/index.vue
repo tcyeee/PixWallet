@@ -1,7 +1,6 @@
 <template>
-  <ReturnButton />
+  <ReturnButton/>
   <div class="p-5 h-screen overflow-y-scroll pb-[30vh]">
-    <div class="text-6xl font-bold text-pix-800 font-pix-primary mb-6">Settings</div>
     
     <!-- 网络设置 -->
     <div class="bg-pix-200 rounded-2xl p-5 mb-4 ">

@@ -1,10 +1,16 @@
 <template>
-  <div class="flex">
-    <div @click="NAV.Back()" class="bg-pix-500 rounded-[20px] p-[5px] shadow-lg">
-      <div class="px-3 font-pix-secondary text-3xl">Return</div>
+  <div class="mb-4 flex items-center">
+    <div @click="NAV.Back()" class="bg-pix-200 rounded-2xl p-3 cursor-pointer hover:opacity-80 transition-opacity duration-300 inline-flex items-center">
+      <span class="icon--return w-6 h-6 bg-pix-800"></span>
+      <div class="font-pix-secondary text-2xl text-pix-800 mt-1 ml-1">Return</div>
     </div>
+    <div class="text-6xl font-bold text-pix-800 font-pix-primary ml-4">{{ title }}</div>
   </div>
 </template>
 <script setup lang="ts">
 import NAV from "@/router";
+defineProps<{title: string }>();
 </script>
+<style scoped>  
+@import "@/assets/icon.scss";
+</style>
