@@ -7,8 +7,7 @@ use crate::{
     db::connection::DB_CONN,
     models::history::{History, Status},
 };
-use rusqlite::{Connection, ffi::Error, params};
-use tauri::utils::io::read_line;
+use rusqlite::{params, Connection};
 
 pub struct HistoryRepository {
     conn: Arc<Mutex<Connection>>,
@@ -107,19 +106,11 @@ impl HistoryRepository {
         rows.map(|r| r.unwrap()).collect()
     }
 
-    pub fn count(&self, public_key: &str) -> Result<usize,rusqlite::Error> {
-        
-            let conn = self.get_conn();
-            let mut stmt = conn
-                .prepare(
-                    "SELECT COUNT(*) FROM history WHERE public_key = ? ",
-                )?;
+    pub fn count(&self, public_key: &str) -> Result<usize, rusqlite::Error> {
+        let conn = self.get_conn();
+        let mut stmt = conn.prepare("SELECT COUNT(*) FROM history WHERE public_key = ? ")?;
 
-            let count: i64 = stmt
-                .query_row((public_key,), |row| row.get(0))?;
-            Ok(count as usize)
+        let count: i64 = stmt.query_row((public_key,), |row| row.get(0))?;
+        Ok(count as usize)
     }
-
-
 }
-
