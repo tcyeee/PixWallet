@@ -7,7 +7,8 @@ use crate::{
     db::connection::DB_CONN,
     models::history::{History, Status},
 };
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, ffi::Error, params};
+use tauri::utils::io::read_line;
 
 pub struct HistoryRepository {
     conn: Arc<Mutex<Connection>>,
@@ -60,7 +61,8 @@ impl HistoryRepository {
         Ok(())
     }
 
-    pub fn list(&self, public_key: &str) -> Vec<History> {
+    pub fn list(&self, public_key: &str, page: usize, page_size: usize) -> Vec<History> {
+        let offset = (page - 1) * page_size;
         let conn = self.get_conn();
         let mut stmt = conn
             .prepare(
@@ -78,15 +80,16 @@ impl HistoryRepository {
                 FROM
                     history
                 WHERE
-                    public_key = ?1
+                    public_key = ?
                 ORDER BY
                     created_at DESC
+                    LIMIT ? OFFSET ?
         ",
             )
             .unwrap();
 
         let rows = stmt
-            .query_map([public_key], |row| {
+            .query_map((public_key, page_size, offset), |row| {
                 let status_str: String = row.get(6)?;
                 Ok(History {
                     public_key: row.get(0)?,
@@ -103,4 +106,20 @@ impl HistoryRepository {
             .unwrap();
         rows.map(|r| r.unwrap()).collect()
     }
+
+    pub fn count(&self, public_key: &str) -> Result<usize,rusqlite::Error> {
+        
+            let conn = self.get_conn();
+            let mut stmt = conn
+                .prepare(
+                    "SELECT COUNT(*) FROM history WHERE public_key = ? ",
+                )?;
+
+            let count: i64 = stmt
+                .query_row((public_key,), |row| row.get(0))?;
+            Ok(count as usize)
+    }
+
+
 }
+

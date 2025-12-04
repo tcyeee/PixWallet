@@ -1,3 +1,6 @@
+use serde::de::Error;
+
+use crate::models::history::HistoryQuery;
 use crate::models::{
     dto::TransferParams, history::History, network::SolanaNetwork, wallet::Wallet,
 };
@@ -6,6 +9,7 @@ use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::MsgType;
 use crate::service::notice::{msg, show, NoticeType};
 use crate::service::rpc::{self, history_update};
+use crate::models::history::PaginatedHistory;
 
 #[tauri::command]
 pub fn query_wallet() -> Vec<Wallet> {
@@ -70,12 +74,14 @@ pub async fn transfer(params: TransferParams) -> Result<(), String> {
  * 将更新数据存储到数据库,同时异步通知到前端.
  */
 #[tauri::command]
-pub async fn account_history(public_key: String) -> Result<Vec<History>, String> {
+pub async fn account_history(query: HistoryQuery) -> Result<PaginatedHistory, String> {
     let repo = HistoryRepository::new();
-    let list = repo.list(&public_key);
+    let list = repo.list(&query.public_key, query.page, query.page_size);
+     // 获取总数
+    let total = repo.count(&query.public_key).map_err(|e| e.to_string())?;
     let list_clone = list.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        match history_update(&list_clone, &public_key, SolanaNetwork::Devnet) {
+        match history_update(&list_clone, &query.public_key, SolanaNetwork::Local) {
             Ok(()) => show(NoticeType::Success, "同步完成"),
             Err(e) => {
                 show(NoticeType::Error, &format!("网络同步失败:{}", e));
@@ -84,7 +90,7 @@ pub async fn account_history(public_key: String) -> Result<Vec<History>, String>
         };
     });
 
-    Ok(list)
+    Ok(PaginatedHistory{total, list})
 }
 
 #[tauri::command]

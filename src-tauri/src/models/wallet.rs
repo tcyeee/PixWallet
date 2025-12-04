@@ -1,6 +1,7 @@
 use crate::service::notice;
 use crate::{
     models::network::SolanaNetwork,
+    models::history::History,
     repository::wallet_repo::WalletRepository,
     service::notice::{msg, show, MsgType, NoticeType},
 };
@@ -29,6 +30,13 @@ pub struct Wallet {
     pub created_at: Option<i64>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaginatedHistoryList {
+    pub total: usize,
+    pub list: Vec<History>,
+}
+
+
 impl Wallet {
     pub fn insert(&self, repo: &WalletRepository) -> Result<(), rusqlite::Error> {
         repo.insert(&self);
@@ -40,8 +48,12 @@ impl Wallet {
     }
 
     pub fn del(&self, repo: &WalletRepository) -> Result<(), String> {
-        if self.query_balance()? != 0 {
-            return Err("余额不为0,禁止删除".to_string());
+        // 账户金额小于1_000_000 lamports就允许删除
+        let balance_lamports = self.query_balance()?;
+        let threshold_lamports: u64 = 1_000_000;
+
+        if balance_lamports > threshold_lamports {
+            return Err("余额大于 0.001 SOL，禁止删除".to_string());
         }
         repo.del(&self.public_key);
         Ok(())
@@ -68,7 +80,7 @@ impl Wallet {
             return Err("已达到最大钱包数量(5个), 无法创建新钱包。".to_string());
         }
         // 如果没有指定网络，默认使用 Devnet
-        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Devnet);
+        let network: SolanaNetwork = network.unwrap_or(SolanaNetwork::Local);
         // 生成新的密钥对
         let keypair: Keypair = Keypair::new();
         // 获取公钥

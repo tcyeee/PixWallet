@@ -39,7 +39,7 @@ impl NetworkStatus {
 
 pub fn start_monitor() {
     tokio::spawn(async move {
-        let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Devnet);
+        let client: RpcClient = SolanaNetwork::get_rpc_client(SolanaNetwork::Local);
         loop {
             check(&client).await;
             sleep(Duration::from_secs(5)).await;

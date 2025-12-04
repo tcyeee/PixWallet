@@ -5,6 +5,11 @@ export type WalletInfo = {
     balance: number;
 }
 
+export interface WalletHistoryResp {
+  list: AccountHistory[];
+  total: number;
+}
+
 export enum MsgType {
     /* 显示在界面正上方 */
     ALERT = "ALERT",
