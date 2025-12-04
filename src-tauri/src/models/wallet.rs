@@ -48,8 +48,12 @@ impl Wallet {
     }
 
     pub fn del(&self, repo: &WalletRepository) -> Result<(), String> {
-        if self.query_balance()? != 0 {
-            return Err("余额不为0,禁止删除".to_string());
+        // 账户金额小于1_000_000 lamports就允许删除
+        let balance_lamports = self.query_balance()?;
+        let threshold_lamports: u64 = 1_000_000;
+
+        if balance_lamports > threshold_lamports {
+            return Err("余额大于 0.001 SOL，禁止删除".to_string());
         }
         repo.del(&self.public_key);
         Ok(())
