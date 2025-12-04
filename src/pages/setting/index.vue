@@ -1,7 +1,9 @@
 <template>
+<div class="flex items-start gap-4">
+
   <ReturnButton/>
-  <div class="p-5 h-screen overflow-y-scroll pb-[30vh]">
-    
+
+  <div class="h-screen overflow-y-scroll pb-[20vh] flex-1 hide-scrollbar">
     <!-- 网络设置 -->
     <div class="bg-pix-200 rounded-2xl p-5 mb-4 ">
       <div class="flex items-center mb-3">
@@ -84,6 +86,8 @@
       </div>
     </div>
   </div>
+</div>
+
 </template>
 <script setup>
 import ReturnButton from "@/components/ReturnButton.vue";
