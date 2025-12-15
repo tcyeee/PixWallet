@@ -26,4 +26,12 @@ pub const CREATE_HISTORY_TABLE: &str = "
     );
 ";
 
-pub const TABLES: [&str; 2] = [CREATE_WALLET_TABLE, CREATE_HISTORY_TABLE];
+pub const  CREATE_TOKEN_PRICE_TABLE: &str = "
+ CREATE TABLE IF NOT EXISTS token_price (
+                symbol TEXT PRIMARY KEY,  --  设置为主键
+                usd INTEGER NOT NULL,
+                expo INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+";
+pub const TABLES: [&str; 3] = [CREATE_WALLET_TABLE, CREATE_HISTORY_TABLE, CREATE_TOKEN_PRICE_TABLE];

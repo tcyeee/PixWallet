@@ -1,18 +1,25 @@
 use std::thread;
 use std::time::Duration;
-
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+ 
 use crate::try_notice;
 use crate::{
-    models::{history::History, network::SolanaNetwork, wallet::Wallet},
+    models::{history::History, network::SolanaNetwork, wallet::Wallet, token_price::*},
     repository::history_repo::HistoryRepository,
+    repository::token_price_repo::TokenPriceRepository,
     service::notice::{self, show, NoticeType},
+    utils::http_client::get_pyth_price,
 };
+
 use chrono::Local;
 use solana_client::rpc_client::{GetConfirmedSignaturesForAddress2Config, RpcClient};
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{
     native_token::LAMPORTS_PER_SOL, pubkey::Pubkey, signature::Keypair, signer::Signer,
 };
+
+const CACHE_TTL: i64 = 300; // 5 分钟
 
 pub fn transfer(payer: Wallet, receiver_public_key: String, amount: f32) {
     // [校验] 如果收款账户无法解析则提示
@@ -143,3 +150,87 @@ pub fn get_public_key_by_str(public_key_str: &str) -> Result<Pubkey, String> {
 //         .get_transaction(&sig, UiTransactionEncoding::Json)
 //         .map_err(|e| e.to_string())
 // }
+
+pub async fn get_price(symbol: &str) -> Result<Vec<TokenPrice>, String> {
+    let symbol_list: Vec<String> = symbol
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if symbol_list.is_empty() {
+        return Err("Symbol list is empty".to_string());
+    }
+
+    println!("[DEBUG] 查询符号: {:?}", symbol_list);
+
+    // ① 先查缓存
+    let repo: TokenPriceRepository = TokenPriceRepository::new();
+    let mut need_remote_query_token: Vec<String> = vec![];
+    let now = now_sec();
+
+    let local_price_list = repo.get_multi(&symbol_list);
+    
+    // 如果本地有数据，检查是否需要更新
+    if !local_price_list.is_empty() {
+        for local_price in &local_price_list {
+            if now - local_price.updated_at > CACHE_TTL {
+                need_remote_query_token.push(local_price.symbol.clone());
+            }
+        }
+        
+        if need_remote_query_token.is_empty() {
+            println!("[INFO] 使用缓存数据，数量: {}", local_price_list.len());
+            return Ok(local_price_list);
+        }
+        println!("[INFO] 需要更新 {} 个价格", need_remote_query_token.len());
+    } else {
+        println!("[INFO] 缓存中没有数据，全部远程查询");
+        need_remote_query_token = symbol_list.clone();
+    }
+
+    // ② 外网获取价格（使用更安全的调用）
+    println!("[INFO] 开始远程查询 Pyth 价格...");
+    let token_price_opt = match get_pyth_price(&need_remote_query_token).await {
+        Ok(prices) => {
+            println!("[INFO] 远程查询成功，获取到 {} 个价格", prices.len());
+            prices
+        }
+        Err(e) => {
+            // 如果远程查询失败，但有缓存数据，则返回缓存数据
+            if !local_price_list.is_empty() {
+                eprintln!("[WARN] 远程查询失败，使用缓存数据: {}", e);
+                return Ok(local_price_list);
+            }
+            return Err(format!("Failed to fetch price: {}", e));
+        }
+    };
+
+    // ③ 如果没有价格就直接返回缓存或空
+    if token_price_opt.is_empty() {
+        eprintln!("[WARN] 远程查询返回空价格列表");
+        if !local_price_list.is_empty() {
+            return Ok(local_price_list);
+        }
+        return Ok(vec![]);
+    }
+
+    // ④ 保存到数据库
+    println!("[INFO] 保存 {} 个价格到数据库", token_price_opt.len());
+    println!("[INFO] 保存 {:?} 到数据库", token_price_opt);
+    match repo.save_all(&token_price_opt) {
+        Ok(_) => println!("数据库保存成功 data={:?}", token_price_opt),
+        Err(e) => println!("数据库保存远程价格失败:data={:?}, e= {}",token_price_opt, e) 
+    };
+
+    // ⑤ 发送通知
+    notice::msg(notice::MsgType::RefreshTokenPrice, &token_price_opt);
+
+    Ok(token_price_opt)
+}
+fn now_sec() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64
+}

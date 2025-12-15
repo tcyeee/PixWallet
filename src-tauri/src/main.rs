@@ -25,6 +25,7 @@ async fn main() {
             service::wallet::transfer,
             service::wallet::account_history,
             service::wallet::transfer_detail,
+            service::wallet::get_token_price,
         ])
         .setup(|app| {
             // 初始化数据库

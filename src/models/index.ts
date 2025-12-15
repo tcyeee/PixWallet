@@ -16,6 +16,11 @@ export interface WalletHistoryResp {
     total: number;
 }
 
+export interface TokePriceResp {
+    usd: number;
+    expo: number;
+    symbol: string;
+}
 export enum MsgType {
     /* 显示在界面正上方 */
     ALERT = "ALERT",
@@ -33,6 +38,8 @@ export enum MsgType {
     REFRESH_HISTORY = "REFRESH_HISTORY",
     /* 刷新单个钱包 */
     REFRESH_WALLET = "REFRESH_WALLET",
+    /* 刷新价格 */
+    REFRESH_TOKEN_PRICE = "REFRESH_TOKEN_PRICE",
 }
 
 export enum NetworkHealth {

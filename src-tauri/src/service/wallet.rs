@@ -1,6 +1,8 @@
 use crate::models::history::HistoryQuery;
 use crate::models::history::PaginatedHistory;
-use crate::models::{dto::TransferParams, network::SolanaNetwork, wallet::Wallet};
+use crate::models::{dto::TransferParams, network::SolanaNetwork, wallet::Wallet,
+    token_price::TokenPrice,
+};
 use crate::repository::history_repo::HistoryRepository;
 use crate::repository::wallet_repo::WalletRepository;
 use crate::service::notice::MsgType;
@@ -100,3 +102,10 @@ pub async fn transfer_detail(_signature: &str) -> Result<(), String> {
     // rpc::transfer_detail(signature)
     Ok(())
 }
+
+#[tauri::command]
+pub async fn get_token_price(symbol:String) -> Result<Vec<TokenPrice>, String> {
+    let token_price_list = rpc::get_price(&symbol).await?;
+    Ok(token_price_list)
+}
+
