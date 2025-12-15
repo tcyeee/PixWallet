@@ -1,5 +1,13 @@
 <template>
   <div class="flex gap-8 items-start">
+  <!-- 价格卡片列表 -->
+    <TokenPriceCard
+      v-for="item in tokenPriceList"
+      :key="item.symbol"
+      :symbol="item.symbol"
+      :usd="item.usd"
+      :expo="item.expo"
+    />
     <!-- 左侧卡片列表 -->
     <WalletCardList
       :card-slots="cardSlots"
@@ -48,15 +56,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { listen } from "@tauri-apps/api/event";
-import { MsgType } from "@/models";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { listen , UnlistenFn} from "@tauri-apps/api/event"; 
 import API from "@/api";
 import NAV from "@/router";
 import { useUserStore } from "@/stores/user";
 import WalletCardList from "@/components/WalletCardList.vue";
+import TokenPriceCard from "@/components/TokenPriceCard.vue";
 import { lamportsToSol } from "@/utils/common";
-
+import { MsgType , TokePriceResp} from "@/models";
 const userStore = useUserStore();
 
 // 卡槽数据：固定 5 个，空卡槽排在前面，真实钱包排在后面
@@ -100,6 +108,54 @@ function refreshBalance() {
 listen<null>(MsgType.BALANCE_REFRESH_END, () => {
   userStore.loading.refresh = false;
 });
+
+const tokenPriceList = ref<TokePriceResp[]>([]);
+const loadingPrices = ref(false);
+
+function getPrice() {
+   API.TokenPrice({"symbol":"SOL"}).then((res)=> {
+    tokenPriceList.value = res;
+    loadingPrices.value = true;
+    console.log("token返回值:", res);
+   })
+}
+
+// 1. 页面加载时获取价格
+onMounted(async () => {
+  console.log("📡 页面加载，开始获取价格...");
+  
+   getPrice();
+  // 监听价格刷新事件
+  setupPriceListener();
+});
+
+//  2. 清理监听器
+onUnmounted(() => {
+  if (unlistenPriceRefresh) {
+    unlistenPriceRefresh();
+  }
+});
+
+// 4. 监听后端价格刷新通知
+let unlistenPriceRefresh: UnlistenFn | null = null;
+
+async function setupPriceListener() {
+  try {
+    // 监听你后端发送的 RefreshTokenPrice 事件
+    unlistenPriceRefresh = await listen("REFRESH_TOKEN_PRICE", (event) => {
+      console.log("🔄 收到价格刷新通知:", event);
+      
+      // 重新获取价格
+      getPrice();
+    });
+    
+    console.log(" 已监听价格刷新事件");
+    
+  } catch (error) {
+    console.error(" 设置价格监听失败:", error);
+  }
+}
+
 </script>
 
 <style scoped>

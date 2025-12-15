@@ -97,7 +97,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import API from "@/api";
 import { useRoute } from "vue-router";
-import { AccountHistory, MsgType, HistoryQuery } from "@/models";
+import { AccountHistory, MsgType, HistoryQuery} from "@/models";
 import { formatRelativeTime, lamportsToSol, formatCardNumber } from "@/utils/common";
 import { listen } from "@tauri-apps/api/event";
 import { notify } from "@/utils/notify";
@@ -145,6 +145,8 @@ async function copy(content: string) {
     console.error(err);
   }
 }
+
+ 
 
 let unlisten: (() => void) | null = null;
 onMounted(async () => {

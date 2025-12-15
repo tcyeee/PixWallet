@@ -17,6 +17,7 @@ pub enum MsgType {
     RefreshWallet,
     /* 前端单个账户历史刷新 */
     RefreshHistory,
+    RefreshTokenPrice,
 }
 
 impl MsgType {
@@ -28,6 +29,7 @@ impl MsgType {
             MsgType::TransferInfo => "TRANSFER_INFO",
             MsgType::RefreshHistory => "REFRESH_HISTORY",
             MsgType::BalanceRefreshEnd => "BALANCE_REFRESH_END",
+            MsgType::RefreshTokenPrice => "REFRESH_TOKEN_PRICE",
         }
     }
 }
