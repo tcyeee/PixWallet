@@ -1,5 +1,12 @@
 ![1](./public/pic/header_2.png)
 
+<div align="center">
+	<img src="https://img.shields.io/badge/📩-tcyeee@outlook.com-red">
+	<img src="https://img.shields.io/github/last-commit/tcyeee/PixWallet">
+	<img src="https://img.shields.io/github/v/release/tcyeee/PixWallet">
+	<img src="https://img.shields.io/github/license/tcyeee/PixWallet">
+	<img src="https://img.shields.io/github/stars/tcyeee/PixWallet">
+</div>
 
 # Introduction
 
